@@ -15,7 +15,7 @@ import {
 import useGameName from './useGameName';
 import useRaceColor from './useRaceColor';
 import EngineFooter from './EngineFooter';
-import { raceAmbientOverlay, frameTintFilter } from './theme';
+import { raceAmbientOverlay } from './theme';
 import { CONTENT_WIDTH_CSS_VAR, CONTENT_WIDTH_DEFAULT, TOPBAR_MAX_WIDTH } from './contentWidth';
 import useKeyboardViewport from './useKeyboardViewport';
 
@@ -55,20 +55,6 @@ function Home() {
     const location = useLocation();
     const theme = useTheme();
     const race = useRaceColor();
-    // Ramka rasowa (PNG w /ui/frames) - nakładka na panele, nie zmienia rozmiarów.
-    const FRAME_H = `/ui/frames/${race.frame || 'human'}-h.png`;
-    const FRAME_V = `/ui/frames/${race.frame || 'human'}-v.png`;
-    const FRAME_TH = 18; // grubość poziomej belki (góra/dół)
-    const FRAME_TV = 18; // grubość pionowej belki (boki)
-    // Ozdobny narożnik (wspólny dla ras) - jeden PNG + 3 odbicia lustrzane.
-    // Kładziony NAD belkami w rogach panelu, dopasowany grubością do belek.
-    const CORNER_TL = '/ui/frames/corner-tl.png';
-    const CORNER_TR = '/ui/frames/corner-tr.png';
-    const CORNER_BL = '/ui/frames/corner-bl.png';
-    const CORNER_BR = '/ui/frames/corner-br.png';
-    const CORNER_W = 93; // szerokość narożnika (mieści się nawet na wąskim panelu online)
-    const CORNER_H = 80; // wysokość = zachowana proporcja grafiki (374x322)
-
     const handleCloseOnlineList = () => setShowOnlineList(false);
 
     // Mierzenie wysokości mobilnego paska. ResizeObserver łapie każdą zmianę -
@@ -280,83 +266,33 @@ function Home() {
         ? raceAmbientOverlay(race.hover || race.hex)
         : `radial-gradient(ellipse at center, rgba(244, 239, 227, 0.9) 0%, rgba(232, 227, 215, 0.97) 100%)`;
 
-    // Kamienna tekstura tła panelu + delikatny akcent rasy u góry (dark mode).
-    // Wydzielona osobno, bo używa jej też wąski, ZWINIĘTY pasek listy online,
-    // do którego ozdobna ramka PNG (2×26px po bokach) po prostu się nie mieści.
+    // Tło panelu: płaski, ciemny kolor + delikatna poświata w kolorze rasy u góry.
+    // Bez grafik - cały wygląd niosą kolor rasy i obwódka.
     const panelTexture = {
         backgroundColor: theme.palette.mode === 'dark'
             ? '#151515'
             : theme.palette.background.paper,
         ...(theme.palette.mode === 'dark' ? {
-            // Neutralna tekstura + subtelna poświata rasy u góry.
-            backgroundImage: `radial-gradient(ellipse at 50% 0%, ${PANEL_TOP_GLOW} 0%, transparent 60%), url(/ui/frames/panel-bg-neutral.png)`,
-            backgroundSize: 'cover, cover',
-            backgroundPosition: 'center, center',
-            backgroundRepeat: 'no-repeat, no-repeat',
+            backgroundImage: `radial-gradient(ellipse at 50% 0%, ${PANEL_TOP_GLOW} 0%, transparent 60%)`,
         } : {}),
     };
 
-    // Style Paper - OSTRE KRAWĘDZIE, RDZA, STAL.
-    // Architektura ramki rasowej (bez zmiany rozmiaru panelu):
-    //  - przezroczysty border = pas ramki; pod nim ciemne, PEŁNE tło (frame band
-    //    jest ciemny, nie prześwituje przez ażurową ramkę),
-    //  - ::before = KAMIENNA TEKSTURA tylko w padding-box => kończy się dokładnie
-    //    na wewnętrznej krawędzi ramki (nie "wychodzi" poza nią), wypełnia panel
-    //    góra-dół niezależnie od scrolla (panel się nie scrolluje - robi to wnętrze),
-    //  - ::after = ozdobna ramka PNG rysowana na pasie borderu (inset -FRAME_T),
-    //  - treść panelu MUSI mieć position:relative + zIndex 1 (jest nad ::before).
-    // UWAGA: NIE dawać panelowi overflow:hidden - przycięłoby ::after w pasie ramki.
+    // Style panelu treści - ostre krawędzie, obwódka w kolorze rasy.
     const paperStyles = {
         boxSizing: 'border-box',
         position: 'relative',
-        border: `${FRAME_TH}px solid transparent`,
-        // Pas ramki (border) jest PRZEZROCZYSTY - pod ażurową ramką prześwituje
-        // świat (ciemna winieta tła gry), nie ma ciemnego prostokąta. Ciemne tło +
-        // tekstura są tylko WEWNĄTRZ ramki, w ::before (padding-box).
-        backgroundColor: theme.palette.mode === 'dark' ? 'transparent' : theme.palette.background.paper,
-        borderRadius: '0', // OSTRE KRAWĘDZIE MOTYW WIZUALNY
+        ...panelTexture,
+        border: `1px solid ${race.border}`,
+        borderTop: `3px solid ${race.accent}`,
+        borderRadius: '0',
         boxShadow: theme.palette.mode === 'dark'
-            ? `0 20px 50px rgba(0, 0, 0, 0.9)`
+            ? '0 20px 50px rgba(0, 0, 0, 0.9)'
             : '0 4px 20px rgba(78, 64, 28, .15)',
-        // Bez backdrop-filter na panelu - rozmywał świat w pasie ramki i dawał
-        // "kolorowe" tło pod ramką. Wnętrze i tak jest nieprzezroczyste (::before).
-        transition: 'all 0.3s ease',
+        transition: 'box-shadow 0.3s ease',
         '&:hover': {
             boxShadow: theme.palette.mode === 'dark'
                 ? `0 25px 60px rgba(0, 0, 0, 0.95), 0 0 30px ${rustColor}40`
                 : '0 6px 24px rgba(78, 64, 28, .2)',
-        },
-        // Kamienna tekstura wewnątrz ramki (padding-box).
-        '&::before': {
-            content: '""',
-            position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
-            ...(theme.palette.mode === 'dark' ? {
-                // Neutralne #151515 (fallback) + neutralna tekstura + subtelna
-                // poświata rasy u góry. Tekstura daje panelowi głębię (faktura),
-                // nie płaski kolor. cover = skalowanie proporcjonalne.
-                backgroundColor: '#151515',
-                backgroundImage: `radial-gradient(ellipse at 50% 0%, ${PANEL_TOP_GLOW} 0%, transparent 60%), url(/ui/frames/panel-bg-neutral.png)`,
-                backgroundSize: 'cover, cover',
-                backgroundPosition: 'center, center',
-                backgroundRepeat: 'no-repeat, no-repeat',
-            } : {}),
-        },
-        // Ozdobna ramka rasowa na pasie borderu. Warstwy (pierwsza = na wierzchu):
-        // 4 NAROŻNIKI (w rogach) -> belki PIONOWE -> belki POZIOME. Narożniki
-        // przykrywają styk belek, a pionowe rysują się nad poziomymi na bokach.
-        '&::after': {
-            content: '""',
-            position: 'absolute',
-            top: `-${FRAME_TH}px`, bottom: `-${FRAME_TH}px`,
-            left: `-${FRAME_TV}px`, right: `-${FRAME_TV}px`,
-            pointerEvents: 'none', zIndex: 6,
-            // Tint rasowy ramki + subtelna poświata w kolorze dividera rasy
-            // (race.strong) - dwie warstwy (blisko + szerzej) dla głębi.
-            filter: `${frameTintFilter(race.frame || 'human')} drop-shadow(0 0 5px ${race.frameGlow}) drop-shadow(0 0 13px ${race.frameGlow})`,
-            backgroundImage: `url(${CORNER_TL}), url(${CORNER_TR}), url(${CORNER_BL}), url(${CORNER_BR}), url(${FRAME_V}), url(${FRAME_V}), url(${FRAME_H}), url(${FRAME_H})`,
-            backgroundRepeat: 'no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat',
-            backgroundPosition: 'top left, top right, bottom left, bottom right, left center, right center, top center, bottom center',
-            backgroundSize: `${CORNER_W}px ${CORNER_H}px, ${CORNER_W}px ${CORNER_H}px, ${CORNER_W}px ${CORNER_H}px, ${CORNER_W}px ${CORNER_H}px, ${FRAME_TV}px 100%, ${FRAME_TV}px 100%, 100% ${FRAME_TH}px, 100% ${FRAME_TH}px`,
         },
     };
 

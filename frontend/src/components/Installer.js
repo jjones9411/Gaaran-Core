@@ -9,7 +9,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import {
   Box, Paper, Typography, TextField, Button, Stepper, Step, StepLabel,
-  Alert, CircularProgress, IconButton, Grid, Divider, Accordion,
+  Alert, CircularProgress, IconButton, Grid, Accordion,
   AccordionSummary, AccordionDetails,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
@@ -49,20 +49,10 @@ const TEXT_COLOR_PRESETS = [
 
 const emptyRace = () => ({
   name: '', description: '', color: '#7a3b0f', traits: '',
-  base_strength: 5, base_dexterity: 5, base_speed: 5,
-  base_intelligence: 5, base_willpower: 5, base_endurance: 5,
-  mult_strength: 1.0, mult_dexterity: 1.0, mult_speed: 1.0,
-  mult_intelligence: 1.0, mult_willpower: 1.0, mult_endurance: 1.0,
-  combat_day_percent: 0, combat_night_percent: 0,
 });
 
 const emptyClass = () => ({
   name: '', description: '',
-  mult_strength: 1.0, mult_dexterity: 1.0, mult_speed: 1.0,
-  mult_intelligence: 1.0, mult_willpower: 1.0, mult_endurance: 1.0,
-  bonus_attack_percent: 0, bonus_defense_percent: 0, bonus_flee_percent: 0,
-  bonus_catch_percent: 0, bonus_pvp_theft_percent: 0, bonus_craft_quality_percent: 0,
-  bonus_craft_stamina_reduction_percent: 0, bonus_heal_cost_reduction_percent: 0,
 });
 
 function ColorPickerRow({ label, value, onChange, presets }) {
@@ -334,8 +324,8 @@ function Installer({ onComplete }) {
           {step === 2 && (
             <Box>
               <Typography sx={{ mb: 2 }}>
-                Zdefiniuj rasy postaci (dowolna liczba, minimum jedna). Statystyki startowe i mnożniki
-                możesz zostawić domyślne - zaawansowana konfiguracja jest opcjonalna.
+                Zdefiniuj rasy postaci (dowolna liczba, minimum jedna). Rasa jest tu wyłącznie
+                fabularna: nazwa, opis, cechy i kolor, po którym poznasz ją w interfejsie.
               </Typography>
               {races.map((race, idx) => (
                 <Accordion key={idx} sx={{ mb: 1 }}>
@@ -354,53 +344,6 @@ function Installer({ onComplete }) {
                     <TextField fullWidth multiline rows={3} label="Opis" value={race.description} onChange={e => updateRace(idx, 'description', e.target.value)} sx={inputSx} />
                     <TextField fullWidth label="Cechy (oddzielone przecinkiem)" value={race.traits} onChange={e => updateRace(idx, 'traits', e.target.value)} sx={inputSx} placeholder="np. Silna, Odporna, Nieufna" />
                     <TextField label="Kolor (HEX)" value={race.color} onChange={e => updateRace(idx, 'color', e.target.value)} sx={inputSx} />
-                    <Divider sx={{ my: 2 }} />
-                    <Typography variant="caption" sx={{ display: 'block', mb: 1 }}>Statystyki startowe</Typography>
-                    <Grid container spacing={1} sx={{ mb: 2 }}>
-                      {['strength', 'dexterity', 'speed', 'intelligence', 'willpower', 'endurance'].map(stat => (
-                        <Grid item xs={4} key={stat}>
-                          <TextField
-                            fullWidth size="small" type="number" label={stat}
-                            value={race[`base_${stat}`]}
-                            onChange={e => updateRace(idx, `base_${stat}`, Number(e.target.value))}
-                          />
-                        </Grid>
-                      ))}
-                    </Grid>
-                    <Typography variant="caption" sx={{ display: 'block', mb: 1 }}>
-                      Mnożniki AP (specjalność rasy - suma ok. 6.0 dla zbalansowania)
-                    </Typography>
-                    <Grid container spacing={1}>
-                      {['strength', 'dexterity', 'speed', 'intelligence', 'willpower', 'endurance'].map(stat => (
-                        <Grid item xs={4} key={stat}>
-                          <TextField
-                            fullWidth size="small" type="number" label={stat}
-                            inputProps={{ step: 0.1 }}
-                            value={race[`mult_${stat}`]}
-                            onChange={e => updateRace(idx, `mult_${stat}`, Number(e.target.value))}
-                          />
-                        </Grid>
-                      ))}
-                    </Grid>
-                    <Typography variant="caption" sx={{ display: 'block', mt: 2, mb: 1 }}>
-                      Modyfikator walki wg pory doby (%) - np. wilkołaki +20 w nocy, wampiry -15 w dzień, ludzie 0/0
-                    </Typography>
-                    <Grid container spacing={1}>
-                      <Grid item xs={6}>
-                        <TextField
-                          fullWidth size="small" type="number" label="Dzień (%)"
-                          value={race.combat_day_percent ?? 0}
-                          onChange={e => updateRace(idx, 'combat_day_percent', Number(e.target.value))}
-                        />
-                      </Grid>
-                      <Grid item xs={6}>
-                        <TextField
-                          fullWidth size="small" type="number" label="Noc (%)"
-                          value={race.combat_night_percent ?? 0}
-                          onChange={e => updateRace(idx, 'combat_night_percent', Number(e.target.value))}
-                        />
-                      </Grid>
-                    </Grid>
                   </AccordionDetails>
                 </Accordion>
               ))}
@@ -420,7 +363,8 @@ function Installer({ onComplete }) {
           {step === 3 && (
             <Box>
               <Typography sx={{ mb: 2 }}>
-                Zdefiniuj klasy postaci (dowolna liczba, minimum jedna) - wybierane przez gracza po stworzeniu postaci.
+                Zdefiniuj klasy postaci (dowolna liczba, minimum jedna) - wybierane przez gracza przy
+                tworzeniu postaci. Klasa też jest wyłącznie fabularna: nazwa i opis roli w świecie.
               </Typography>
               {classes.map((cls, idx) => (
                 <Accordion key={idx} sx={{ mb: 1 }}>
@@ -437,32 +381,6 @@ function Installer({ onComplete }) {
                   <AccordionDetails>
                     <TextField fullWidth label="Nazwa klasy" value={cls.name} onChange={e => updateClass(idx, 'name', e.target.value)} sx={inputSx} />
                     <TextField fullWidth multiline rows={3} label="Opis" value={cls.description} onChange={e => updateClass(idx, 'description', e.target.value)} sx={inputSx} />
-                    <Divider sx={{ my: 2 }} />
-                    <Typography variant="caption" sx={{ display: 'block', mb: 1 }}>Mnożniki AP (mnożą się z mnożnikiem rasy)</Typography>
-                    <Grid container spacing={1} sx={{ mb: 2 }}>
-                      {['strength', 'dexterity', 'speed', 'intelligence', 'willpower', 'endurance'].map(stat => (
-                        <Grid item xs={4} key={stat}>
-                          <TextField
-                            fullWidth size="small" type="number" label={stat}
-                            inputProps={{ step: 0.1 }}
-                            value={cls[`mult_${stat}`]}
-                            onChange={e => updateClass(idx, `mult_${stat}`, Number(e.target.value))}
-                          />
-                        </Grid>
-                      ))}
-                    </Grid>
-                    <Typography variant="caption" sx={{ display: 'block', mb: 1 }}>Bonusy gameplayowe (%)</Typography>
-                    <Grid container spacing={1}>
-                      {['attack_percent', 'defense_percent', 'flee_percent', 'catch_percent', 'pvp_theft_percent', 'craft_quality_percent', 'craft_stamina_reduction_percent', 'heal_cost_reduction_percent'].map(field => (
-                        <Grid item xs={6} sm={4} key={field}>
-                          <TextField
-                            fullWidth size="small" type="number" label={field.replace(/_percent$/, '')}
-                            value={cls[`bonus_${field}`]}
-                            onChange={e => updateClass(idx, `bonus_${field}`, Number(e.target.value))}
-                          />
-                        </Grid>
-                      ))}
-                    </Grid>
                   </AccordionDetails>
                 </Accordion>
               ))}

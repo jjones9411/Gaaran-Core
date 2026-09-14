@@ -21,7 +21,6 @@ import {
   Info as InfoIcon,
   Edit as EditIcon,
   AccountBox as AccountBoxIcon,
-  BarChart as StatsIcon,
   Inventory2 as InventoryIcon,
   Description as DescriptionIcon,
 } from '@mui/icons-material';
@@ -56,9 +55,7 @@ import { CHAT_EDITOR_MOBILE, CHAT_EDITOR_DESKTOP, CHAT_PROSEMIRROR_MIN } from '.
 
 // Wariant grafiki dividera (rozdzielacz postów) wg rasy biezacej postaci.
 import CharacterCardPopup from './CharacterCardPopup';
-import CharacterStatsPopup, { hasMechanicalStats } from './CharacterStatsPopup';
 import CharacterStoryItemsPopup from './CharacterStoryItemsPopup';
-import { getPlayStyle } from './playStyle';
 import { cardOpenProps } from './cardClick';
 import useResponsive from './useResponsive';
 
@@ -378,7 +375,6 @@ function PrivateSessions() {
   const navigate = useNavigate();
   const theme = useTheme();
   const race = useRaceColor(); // ramka/tinta/hover wg rasy (po NAZWIE rasy, pewniejsze)
-  const raceFrame = race.frame || 'human';
   const gameName = useGameName(''); // nagłówek eksportowanego dokumentu sesji
   // Trzyma aktualny sessionId, żeby fetchSessionData mógł odrzucić spóźnioną
   // odpowiedź z poprzedniej sesji po szybkim przełączeniu (wyścig zapytań)
@@ -501,8 +497,6 @@ function PrivateSessions() {
   const [selectedCharacterForCard, setSelectedCharacterForCard] = useState(null);
 
   // State dla podglądu statystyk uczestnika (tylko postacie grające mechanicznie)
-  const [showCharacterStatsPopup, setShowCharacterStatsPopup] = useState(false);
-  const [selectedCharacterForStats, setSelectedCharacterForStats] = useState(null);
 
   // State dla podglądu przedmiotów fabularnych uczestnika (spis z profilu)
   const [showCharacterStoryItemsPopup, setShowCharacterStoryItemsPopup] = useState(false);
@@ -1736,52 +1730,9 @@ borderRadius: 2
                       <Typography variant="caption" sx={{ color: theme.palette.text.secondary, display: 'block' }}>
                         Gracz: {participant.username} (#{participant.user_id})
                       </Typography>
-                      <Chip
-                        label={getPlayStyle(participant.play_style).short}
-                        size="small"
-                        sx={{
-                          mt: 0.5,
-                          height: 18,
-                          fontSize: '0.6rem',
-                          fontWeight: 'bold',
-                          borderRadius: 0,
-                          backgroundColor: `${getPlayStyle(participant.play_style).color}22`,
-                          color: getPlayStyle(participant.play_style).color,
-                          border: `1px solid ${getPlayStyle(participant.play_style).color}66`
-                        }}
-                      />
                     </Box>
 
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0 }}>
-                      {/* Podgląd statystyk - tylko dla postaci grających mechanicznie
-                          albo mechanicznie i fabularnie. Mistrz gry musi widzieć poziom
-                          i statystyki, żeby wiedzieć, co postać realnie potrafi. */}
-                      {hasMechanicalStats(participant.play_style) && (
-                        <Tooltip title="Statystyki postaci">
-                          <IconButton
-                            size="small"
-                            onClick={() => {
-                              setSelectedCharacterForStats({
-                                id: participant.character_id,
-                                name: participant.character_name,
-                                avatar: getCharacterAvatar(participant)
-                              });
-                              setShowCharacterStatsPopup(true);
-                            }}
-                            sx={{
-                              color: theme.palette.primary.main,
-                              backgroundColor: 'rgba(0,0,0,0.6)',
-                              '&:hover': {
-                                backgroundColor: 'rgba(0,0,0,0.8)',
-                                color: theme.palette.primary.light
-                              }
-                            }}
-                          >
-                            <StatsIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      )}
-
                       {/* Przycisk KP - Karta Postaci */}
                       <Tooltip title="Karta Postaci">
                         <IconButton
@@ -1857,20 +1808,6 @@ borderRadius: 2
         </DialogActions>
       </Dialog>
 
-      {/* Podgląd statystyk uczestnika - montowany razem z panelem uczestników,
-          bo tylko z niego jest otwierany (leży nad nim jako druga warstwa). */}
-      {selectedCharacterForStats && (
-        <CharacterStatsPopup
-          open={showCharacterStatsPopup}
-          onClose={() => {
-            setShowCharacterStatsPopup(false);
-            setSelectedCharacterForStats(null);
-          }}
-          characterId={selectedCharacterForStats.id}
-          characterName={selectedCharacterForStats.name}
-          characterAvatar={selectedCharacterForStats.avatar}
-        />
-      )}
 
       {/* Podgląd przedmiotów fabularnych uczestnika - jak wyżej, druga warstwa
           nad panelem uczestników. */}
@@ -2632,10 +2569,7 @@ borderRadius: 2
                     display: 'block',
                     height: { xs: '10px', sm: '18px' },
                     mt: { xs: 0.5, sm: 0.75 },
-                    backgroundImage: `url(/ui/dividers/bottom-${raceFrame}.png)`,
-                    backgroundRepeat: 'no-repeat',
-                    backgroundPosition: 'center',
-                    backgroundSize: '100% 100%',
+                    background: `linear-gradient(90deg, transparent, ${race.border}, transparent)`,
                   },
                 }}
               >
@@ -3103,10 +3037,9 @@ borderRadius: 2
   sx={{
     p: 1.5,
     mb: 1.5,
-    // Ozdobna ramka rasowa (border-image) wokół sesji - rogi ostre, boki się skalują.
-    borderStyle: 'solid',
-    borderWidth: '18px 22px',
-    borderImage: `url(/ui/session/${raceFrame}.png) 56 62 stretch`,
+    // Obwódka w kolorze rasy - bez grafik.
+    border: `1px solid ${race.border}`,
+    borderTop: `3px solid ${race.accent}`,
     // Bez czarnego tła - tylko subtelna tinta w kolorze rasy; hover mocniejszy.
     backgroundColor: `${race.hex}12`,
     backgroundClip: 'padding-box',

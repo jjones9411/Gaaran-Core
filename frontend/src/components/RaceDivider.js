@@ -1,46 +1,72 @@
 // ================================================================
-// RaceDivider - ozdobna linia rozdzielająca w kolorze RASY.
+// RaceDivider - linia rozdzielająca w kolorze RASY.
 //
-// Dwa warianty grafiki (w /ui/dividers): 'top' (z symbolem na środku) i
-// 'bottom' (sama linia, bez symbolu). Kolor/wariant wg rasy - domyślnie rasy
-// biezacej postaci (useRaceColor), albo jawnie przez prop `frame`
-// (np. w Cmentarzu: linia w kolorze rasy KAŻDEJ martwej postaci osobno).
+// Czysty CSS, bez grafik: cienka linia, która wygasza się ku brzegom, w kolorze
+// rasy bieżącej postaci (useRaceColor) albo rasy podanej jawnie przez `raceKey`
+// (np. na cmentarzu - linia w kolorze rasy każdej pożegnanej postaci osobno).
 //
-// - BOTTOM: sama nitka, rozciągana na całą szerokość (100% 100%). Brak symbolu,
-//   więc rozciąganie w poziomie jest niewidoczne.
-// - TOP: ma symbol na środku, więc NIE wolno go rozciągać w pionie. Używamy
-//   aspect-ratio (proporcje grafiki), więc wysokość sama skaluje się do szerokości
-//   i symbol zostaje okrągły przy każdej szerokości kontenera.
+// Wariant 'top' dokłada rombik na środku (nagłówek sekcji), 'bottom' to sama
+// nitka zamykająca blok.
 // ================================================================
 import { Box } from '@mui/material';
 import useRaceColor from './useRaceColor';
 
-const FRAMES = new Set(['human', 'wolf', 'vampire']);
-// Proporcje grafik TOP (szerokość / wysokość) - żeby zachować okrągły symbol.
-const TOP_AR = { human: '1080 / 87', wolf: '1124 / 82', vampire: '1148 / 94' };
+export default function RaceDivider({ variant = 'bottom', raceKey = null, height, sx }) {
+  const race = useRaceColor(raceKey);
+  const color = race.accent;
 
-export default function RaceDivider({ variant = 'bottom', frame, height, sx }) {
-  const race = useRaceColor();
-  const f = FRAMES.has(frame) ? frame : (race.frame || 'human');
-  const v = variant === 'top' ? 'top' : 'bottom';
-
-  const common = {
+  const line = {
+    height: 1,
     width: '100%',
-    flexShrink: 0,
-    pointerEvents: 'none',
-    backgroundImage: `url(/ui/dividers/${v}-${f}.png)`,
-    backgroundRepeat: 'no-repeat',
-    backgroundPosition: 'center',
+    background: `linear-gradient(90deg, transparent, ${color}, transparent)`,
+    opacity: 0.55,
   };
 
-  if (v === 'top') {
-    // aspect-ratio zamiast stałej wysokości -> brak rozciągania w pionie, symbol okrągły.
+  if (variant === 'top') {
     return (
-      <Box aria-hidden sx={{ ...common, aspectRatio: TOP_AR[f], backgroundSize: 'contain', ...sx }} />
+      <Box
+        aria-hidden
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1.5,
+          width: '100%',
+          flexShrink: 0,
+          pointerEvents: 'none',
+          py: height != null ? 0 : 1,
+          ...sx,
+        }}
+      >
+        <Box sx={line} />
+        <Box
+          sx={{
+            width: 8,
+            height: 8,
+            flexShrink: 0,
+            transform: 'rotate(45deg)',
+            border: `1px solid ${color}`,
+            opacity: 0.8,
+          }}
+        />
+        <Box sx={line} />
+      </Box>
     );
   }
-  // BOTTOM: cienka linia rozciągnięta na całą szerokość.
+
   return (
-    <Box aria-hidden sx={{ ...common, height: height != null ? height : 22, backgroundSize: '100% 100%', ...sx }} />
+    <Box
+      aria-hidden
+      sx={{
+        width: '100%',
+        flexShrink: 0,
+        pointerEvents: 'none',
+        display: 'flex',
+        alignItems: 'center',
+        height: height != null ? height : 12,
+        ...sx,
+      }}
+    >
+      <Box sx={line} />
+    </Box>
   );
 }

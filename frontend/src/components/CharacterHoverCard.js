@@ -14,7 +14,6 @@
 
 import { Box, Typography, Avatar, Stack, Chip } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { getPlayStyle } from './playStyle';
 
 export default function CharacterHoverCard({
   avatar,
@@ -22,9 +21,6 @@ export default function CharacterHoverCard({
   id,
   raceName,
   gender,
-  level = null,
-  prestige = 0,
-  playStyle = null,
   characterStatus = null,
   narrativeRole = null,
   epithet = null,
@@ -113,27 +109,12 @@ export default function CharacterHoverCard({
             border: `1px solid ${theme.palette.divider}`,
             textAlign: 'left',
           }}>
-            {level != null && (
-              <Typography sx={{ fontSize: 12, color: theme.palette.text.secondary, mb: 0.5 }}>
-                POZIOM: <Box component="span" sx={{ color: theme.palette.primary.main, fontWeight: 'bold' }}>{level || 1}</Box>
-                {prestige > 0 && (
-                  <Box component="span" sx={{ color: theme.palette.warning.main, fontWeight: 'bold', ml: 0.5, textShadow: `0 0 5px ${theme.palette.warning.main}aa` }}>
-                    ({prestige})
-                  </Box>
-                )}
-              </Typography>
-            )}
             <Typography sx={{ fontSize: 12, color: theme.palette.text.secondary, mb: 0.5 }}>
               RASA: <Box component="span" sx={{ color: theme.palette.primary.main, fontWeight: 'bold' }}>{raceName || '-'}</Box>
             </Typography>
-            <Typography sx={{ fontSize: 12, color: theme.palette.text.secondary, ...(playStyle ? { mb: 0.5 } : {}) }}>
+            <Typography sx={{ fontSize: 12, color: theme.palette.text.secondary }}>
               PŁEĆ: <Box component="span" sx={{ color: theme.palette.primary.main, fontWeight: 'bold' }}>{gender || '-'}</Box>
             </Typography>
-            {playStyle && (
-              <Typography sx={{ fontSize: 12, color: theme.palette.text.secondary }}>
-                STYL: <Box component="span" sx={{ color: getPlayStyle(playStyle).color, fontWeight: 'bold' }}>{getPlayStyle(playStyle).short}</Box>
-              </Typography>
-            )}
           </Box>
 
           {/* Rola fabularna (od administracji) + status (od gracza) w jednym

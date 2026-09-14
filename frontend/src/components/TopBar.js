@@ -12,12 +12,10 @@ import PeopleIcon from '@mui/icons-material/People';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTheme } from '@mui/material/styles';
-import { appColors, frameTintFilter } from './theme';
+import { appColors } from './theme';
 import useHudPolling from './useHudPolling';
-import ActiveBuffsBadge from './ActiveBuffsBadge';
 import useRaceColor from './useRaceColor';
 import { useAuth } from './AuthContext';
-import { expNeededForNextLevel } from './characterFormulas';
 
 // UWAGA: to jest baza liczona RAZ przy imporcie modułu - rodzina "rust" (akcent)
 // jest tu zamrożona i NIE łapie koloru rasy. W komponencie TopBar nadpisujemy
@@ -37,109 +35,23 @@ const baseApoColors = {
   narrator: appColors.dangerText,
 };
 
-// Ikonki nawigacji (pliki w /public/ui/nav/). Zastępują napisy głównych tabów
-// oraz przycisków utility po prawej. Nazwa taba/etykieta -> plik PNG.
-const NAV_ICONS = {
-  // główne taby (górny rząd)
-  'POSTAĆ': 'postac.png',
-  'ŚWIAT': 'swiat.png',
-  'KOMUNIKACJA': 'komunikacja.png',
-  'RASY': 'rasy.png',
-  'PORADNIKI': 'poradniki.png',
-  // przyciski utility (prawa strona)
-  'Aktualności': 'aktualnosci.png',
-  'Ustawienia': 'ustawienia.png',
-  'Lobby': 'lobby.png',
-  'Wyloguj': 'wyloguj.png',
-};
-
-// Ikona w stałym kwadratowym boxie: niezależnie od natywnego rozmiaru pliku
-// (są różne) obrazek jest wpasowany przez object-fit:contain, więc wszystkie
-// ikonki w pasku są jednej wielkości. Gdy pliku brak / nie wczyta się -> fallback
-// na tekstową etykietę (nic się nie psuje).
-function NavIcon({ label, size = 34 }) {
-  const [failed, setFailed] = useState(false);
-  const file = NAV_ICONS[label];
-  if (!file || failed) {
-    return <span>{label}</span>;
-  }
+// Etykieta działu w pasku - zwykły tekst zamiast ikonek graficznych.
+// Silnik nie wozi ze sobą żadnych plików graficznych, a napis jest czytelny
+// od razu, bez legendy.
+function NavIcon({ label }) {
   return (
     <Box
-      component="img"
-      src={`/ui/nav/${file}`}
-      alt={label}
-      onError={() => setFailed(true)}
+      component="span"
       sx={{
-        width: size,
-        height: size,
-        objectFit: 'contain',
         display: 'block',
-        pointerEvents: 'none',
-        // delikatny cień, żeby kolorowe ikonki odcinały się od tekstury paska
-        filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.6))',
-      }}
-    />
-  );
-}
-
-// Pełnej szerokości pasek statystyki na dół topbara (HP/STM/EXP).
-// Układ: kolorowa etykieta z lewej | stonowany pasek | wartość liczbowa z prawej.
-// Bez efektu "neonu" - czysty ciemny tor z płaskim, kolorowym wypełnieniem i
-// delikatnym rozjaśnieniem u góry (subtelna głębia, nie świecenie).
-function WideStatBar({ label, value, pct, color }) {
-  const clamped = Math.max(0, Math.min(100, pct || 0));
-  return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', cursor: 'default' }}>
-      {/* Etykieta - w kolorze statystyki */}
-      <Box sx={{
-        width: 34,
-        color,
-        fontSize: '11px',
         fontWeight: 'bold',
+        fontSize: '13px',
         letterSpacing: '0.08em',
-        textShadow: '1px 1px 2px rgba(0,0,0,0.9)',
-        flexShrink: 0,
-      }}>
-        {label}
-      </Box>
-
-      {/* Pasek - ciemny tor + płaskie wypełnienie */}
-      <Box sx={{
-        position: 'relative',
-        flex: 1,
-        height: 11,
-        borderRadius: '3px',
-        backgroundColor: 'rgba(0,0,0,0.62)',
-        border: '1px solid rgba(0,0,0,0.85)',
-        boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.7)',
-        overflow: 'hidden',
-      }}>
-        <Box sx={{
-          position: 'absolute',
-          top: 0,
-          bottom: 0,
-          left: 0,
-          width: `${clamped}%`,
-          background: `linear-gradient(180deg, ${color}, ${color}cc)`,
-          borderRight: clamped > 0 && clamped < 100 ? `1px solid ${color}` : 'none',
-          transition: 'width 0.35s ease',
-        }} />
-      </Box>
-
-      {/* Wartość - zawsze widoczna z prawej (np. 1240 / 1240) */}
-      <Box sx={{
-        minWidth: 84,
-        textAlign: 'right',
-        color: appColors.textPrimary,
-        fontSize: '11px',
-        fontWeight: 'bold',
-        letterSpacing: '0.03em',
-        textShadow: '1px 1px 2px rgba(0,0,0,0.9)',
-        flexShrink: 0,
-        fontVariantNumeric: 'tabular-nums',
-      }}>
-        {value}
-      </Box>
+        textTransform: 'uppercase',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {label}
     </Box>
   );
 }
@@ -193,7 +105,7 @@ function TopBar() {
   const {
     characterData, loadingCharacter,
     generalSessionUnreadCount, privateSessionUnreadCount, messagesUnreadCount,
-    tavernUnread, journalTodoCount, activeBuffs,
+    tavernUnread, journalTodoCount,
   } = useHudPolling(token, characterId);
 
   // Focus mode
@@ -206,7 +118,7 @@ function TopBar() {
   // Auto-detect active tab from path
   useEffect(() => {
     const path = location.pathname;
-    if (path.match(/\/(profile|statscard|equipment|notes)/)) setActiveTab('POSTAĆ');
+    if (path.match(/\/(profile|notes)/)) setActiveTab('POSTAĆ');
     // Cmentarz nie ma już pozycji w menu, ale strona wciąż istnieje - niech podświetla ŚWIAT.
     else if (path.match(/\/(city|hospital|arena|rest|cemetery)(\/|$)/)) setActiveTab('ŚWIAT');
     else if (path.match(/\/(messages|privateSessions|generalSessions|journal|tavern|logs)(\/|$)/)) setActiveTab('KOMUNIKACJA');
@@ -215,25 +127,11 @@ function TopBar() {
     else setActiveTab(null);
   }, [location.pathname, races]);
 
-  // EXP calculations
-  const expNeededForNext = Math.max(1, expNeededForNextLevel(characterData.level));
-  const expPct = Math.min((characterData.experience / expNeededForNext) * 100, 100);
-  const hpPct = characterData.maxHp > 0 ? Math.min((characterData.hp / characterData.maxHp) * 100, 100) : 0;
-  const staminaPct = characterData.maxStamina > 0 ? Math.min((characterData.stamina / characterData.maxStamina) * 100, 100) : 0;
-
   // Navigation config
   const tabItems = {
     'POSTAĆ': [
       { label: 'Profil', path: `/home/profile/${characterId}` },
-      { label: 'Statystyki', path: '/home/statscard' },
-      { label: 'Ekwipunek', path: '/home/equipment' },
       { label: 'Notatki', path: '/home/notes' },
-    ],
-    'ŚWIAT': [
-      { label: 'Miasto', path: '/home/city' },
-      { label: 'Szpital', path: '/home/hospital' },
-      { label: 'Arena', path: '/home/arena' },
-      { label: 'Odpoczynek', path: '/home/rest' },
     ],
     'KOMUNIKACJA': [
       // Codziennik pierwszy - to od niego zaczyna się "co mam dziś odpisać".
@@ -250,12 +148,6 @@ function TopBar() {
     'PORADNIKI': [
       { label: 'Lokacje', path: '/home/infopanel' },
       { label: 'Informacje', path: '/home/infopanel2' },
-      { label: 'Prawo', path: '/home/law' },
-      { label: 'Zwierzęta', path: '/home/bestiary' },
-      { label: 'Mechanika', path: '/home/mechanics' },
-      { label: 'Technologia', path: '/home/technology' },
-      { label: 'Alchemia', path: '/home/alchemy-guide' },
-      { label: 'Historia', path: '/home/history' },
       { label: 'NPC', path: '/home/npc' },
       { label: 'Lista Graczy', path: '/home/players' },
       { label: 'Regulamin', path: '/home/rules' },
@@ -417,43 +309,16 @@ function TopBar() {
         width: '100%',
         position: 'relative',
         boxSizing: 'border-box',
-        // Ta sama architektura co panele (Home.js): przezroczysty border = pas ramki
-        // (pod ażurową ramką prześwituje świat, brak ciemnego prostokąta), ::before =
-        // ciemne tło + tekstura TYLKO wewnątrz ramki, ::after = ozdobna ramka PNG na
-        // pasie borderu. NIE dawać overflow:hidden - przycięłoby ramkę (błąd "topbar bez ramek").
-        backgroundColor: 'transparent',
-        border: '18px solid transparent',
+        // Wygląd paska niosą kolor rasy i obwódka - bez grafik.
+        border: `1px solid ${race.border}`,
+        borderBottom: `3px solid ${race.accent}`,
+        backgroundColor: '#151515',
+        backgroundImage: `radial-gradient(ellipse at 50% 0%, ${race.hex}22 0%, transparent 60%)`,
         flexShrink: 0,
         boxShadow: '0 4px 20px rgba(0,0,0,0.8)',
-        // Kamienna tekstura + akcent rasy wewnątrz ramki (padding-box).
-        '&::before': {
-          content: '""', position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
-          // Neutralne #151515 (fallback) + neutralna tekstura + subtelna poświata rasy.
-          backgroundColor: '#151515',
-          backgroundImage: `radial-gradient(ellipse at 50% 0%, ${race.hex}22 0%, transparent 60%), url(/ui/frames/panel-bg-neutral.png)`,
-          backgroundSize: 'cover, cover',
-          backgroundPosition: 'center, center',
-          backgroundRepeat: 'no-repeat, no-repeat',
-        },
-        // Ozdobna ramka rasowa na pasie borderu. Warstwy (pierwsza = na wierzchu):
-        // 4 narożniki -> belki pionowe -> belki poziome (jak w panelach Home).
-        '&::after': {
-          content: '""', position: 'absolute',
-          top: '-18px', bottom: '-18px', left: '-18px', right: '-18px',
-          pointerEvents: 'none', zIndex: 6,
-          // Tint rasowy ramki + subtelna poświata w kolorze dividera rasy.
-          filter: `${frameTintFilter(race.frame || 'human')} drop-shadow(0 0 5px ${race.frameGlow}) drop-shadow(0 0 13px ${race.frameGlow})`,
-          backgroundImage: `url(/ui/frames/corner-tl.png), url(/ui/frames/corner-tr.png), url(/ui/frames/corner-bl.png), url(/ui/frames/corner-br.png), url(/ui/frames/${race.frame || 'human'}-v.png), url(/ui/frames/${race.frame || 'human'}-v.png), url(/ui/frames/${race.frame || 'human'}-h.png), url(/ui/frames/${race.frame || 'human'}-h.png)`,
-          backgroundRepeat: 'no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat',
-          backgroundPosition: 'top left, top right, bottom left, bottom right, left center, right center, top center, bottom center',
-          backgroundSize: '93px 80px, 93px 80px, 93px 80px, 93px 80px, 18px 100%, 18px 100%, 100% 18px, 100% 18px',
-        },
       }}
     >
-      {/* Główny układ: lewa (avatar+statsy) | środek (nawigacja) | prawa (utility) */}
-      {/* zIndex 1 - treść nad teksturą (::before ma zIndex 0). */}
-      {/* zIndex 7 - treść NAD ozdobną ramką panelu (::after ma 6), żeby awatar mógł
-          "wystawać" nad krawędź topbara. Reszta treści i tak jest w padding-box. */}
+      {/* Główny układ: lewa (avatar) | środek (nawigacja) | prawa (utility) */}
       <Box sx={{ display: 'flex', alignItems: 'stretch', gap: 2, position: 'relative', zIndex: 7 }}>
 
         {/* LEWA: Avatar + statsy tekstowe obok */}
@@ -467,8 +332,7 @@ function TopBar() {
           onAuxClick={(e) => e.button === 1 && handleNavClick(`/home/profile/${characterId}`, e)}
           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleNavClick(`/home/profile/${characterId}`, e); } }}
         >
-          {/* Avatar w ozdobnej ramce rasowej (PNG /ui/frames/avatar-<rasa>.png).
-              Ramka zastępuje dawny pierścień/border; awatar siedzi w jej otworze. */}
+          {/* Avatar w obwódce w kolorze rasy */}
           <Box
             sx={{
               position: 'relative',
@@ -495,23 +359,9 @@ function TopBar() {
                 height: 156,
                 borderRadius: '50%',
                 background: apoColors.bgDark,
-                boxShadow: 'inset 0 0 12px rgba(0,0,0,0.55)',
+                border: `3px solid ${race.accent}`,
+                boxShadow: `inset 0 0 12px rgba(0,0,0,0.55), 0 0 14px ${race.hex}55`,
                 '& img': { objectPosition: 'top center' },
-              }}
-            />
-            {/* Ozdobna ramka awatara wg rasy (nakładka nad awatarem) */}
-            <Box
-              aria-hidden
-              sx={{
-                position: 'absolute',
-                inset: 0,
-                pointerEvents: 'none',
-                zIndex: 2,
-                backgroundImage: `url(/ui/frames/avatar-${race.frame || 'human'}.png)`,
-                backgroundSize: 'auto 100%',
-                backgroundPosition: 'center',
-                backgroundRepeat: 'no-repeat',
-                filter: `${frameTintFilter(race.frame || 'human')} drop-shadow(0 3px 10px rgba(0,0,0,0.7)) drop-shadow(0 0 10px ${race.frameGlow})`,
               }}
             />
           </Box>
@@ -530,28 +380,6 @@ function TopBar() {
               <Box sx={{ color: apoColors.rust, fontWeight: 'bold', fontSize: '16px', letterSpacing: '0.08em', textShadow: '1px 1px 2px rgba(0,0,0,0.8)', whiteSpace: 'nowrap' }}>
                 {characterData.nickname || '—'}
               </Box>
-              <Box sx={{ color: apoColors.textGray, fontSize: '13px', fontWeight: 'bold', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
-                POZIOM {characterData.level}
-                {characterData.prestige > 0 && (
-                  <span style={{ color: theme.palette.warning.main, fontWeight: 'bold', textShadow: `0 0 5px ${theme.palette.warning.main}aa` }}>
-                    ({characterData.prestige})
-                  </span>
-                )}
-                {/* Czasowe bufy z mikstur - widoczne tylko gdy jakiś leci */}
-                <ActiveBuffsBadge buffs={activeBuffs} accentColor={apoColors.rust} />
-              </Box>
-              {/* Złoto postaci - pod poziomem, w złotym kolorze z ikonką monety */}
-              <Tooltip title="Złoto" arrow enterDelay={400}>
-                <Box sx={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px',
-                  color: '#e8c15a', fontSize: '14px', fontWeight: 'bold',
-                  letterSpacing: '0.03em', whiteSpace: 'nowrap', cursor: 'default',
-                  textShadow: '1px 1px 2px rgba(0,0,0,0.9)', fontVariantNumeric: 'tabular-nums',
-                }}>
-                  <span style={{ fontSize: '13px', lineHeight: 1 }} aria-hidden>🪙</span>
-                  {Number(characterData.gold || 0).toLocaleString('pl-PL')}
-                </Box>
-              </Tooltip>
             </Box>
 
         {/* ŚRODEK: nawigacja - duże ikonki; klik otwiera rozwijane menu (popover)
@@ -847,13 +675,6 @@ function TopBar() {
           </Box>
           </Box>
 
-          {/* DÓŁ: paski statystyk na całą szerokość (od avatara do prawej krawędzi);
-              wartości pokazują się w dymku po najechaniu na dany pasek. */}
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6, width: '100%', pl: 0.5, pr: 3, pb: 0.3 }}>
-            <WideStatBar label="HP" value={loadingCharacter ? '…' : `${Math.floor(characterData.hp)} / ${Math.floor(characterData.maxHp)}`} pct={loadingCharacter ? 0 : hpPct} color={theme.palette.error.main} />
-            <WideStatBar label="STM" value={loadingCharacter ? '…' : `${Math.floor(characterData.stamina)} / ${Math.floor(characterData.maxStamina)}`} pct={loadingCharacter ? 0 : staminaPct} color={theme.palette.success.main} />
-            <WideStatBar label="EXP" value={loadingCharacter ? '…' : `${Math.floor(characterData.experience)} / ${expNeededForNext}`} pct={loadingCharacter ? 0 : expPct} color={theme.palette.warning.main} />
-          </Box>
         </Box>
 
       </Box>

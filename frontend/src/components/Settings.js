@@ -8,7 +8,6 @@ import {
 } from '@mui/material';
 import { decodeJwtPayload } from './AuthContext';
 import useRaceColor from './useRaceColor';
-import { PLAY_STYLE_OPTIONS } from './playStyle';
 import {
   FONT_SCALE_MIN,
   FONT_SCALE_MAX,
@@ -105,9 +104,6 @@ function Settings() {
   const [characterData, setCharacterData] = useState(null);
   const [userRole, setUserRole] = useState('');
   const [playerStatus, setPlayerStatus] = useState('not_looking');
-  const [playStyle, setPlayStyle] = useState('oba');
-  const [playStyleChangedAt, setPlayStyleChangedAt] = useState(null);
-  const PLAY_STYLE_COOLDOWN_DAYS = 30;
 
   // Osobista skala czcionki głównego boxa (per konto). Startowa wartość z cache
   // (localStorage), potem dosynchronizowana z serwerem w useEffect poniżej.
@@ -185,11 +181,6 @@ function Settings() {
           } else {
             setPlayerStatus('not_looking');
           }
-
-          // Styl gry z bazy
-          const currentStyle = data.play_style || 'oba';
-          setPlayStyle(PLAY_STYLE_OPTIONS[currentStyle] ? currentStyle : 'oba');
-          setPlayStyleChangedAt(data.play_style_changed_at || null);
 
           // Zaktualizuj localStorage z aktualnymi danymi
           localStorage.setItem('selectedCharacter', JSON.stringify(charData));
@@ -297,45 +288,6 @@ function Settings() {
     }
   };
 
-  const handlePlayStyleChange = async (newStyle) => {
-    const token = localStorage.getItem('token');
-    if (!characterData?.id) {
-      alert('Brak danych postaci');
-      return;
-    }
-
-    try {
-      const response = await fetch(`${API_URL}/character/${characterData.id}/play-style`, {
-        method: 'PUT',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ playStyle: newStyle }),
-      });
-
-      const data = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        // 429 = cooldown 30 dni; pokaż komunikat z serwera i nie zmieniaj wyboru.
-        alert(data.message || 'Nie udało się zaktualizować stylu gry.');
-        return;
-      }
-
-      setPlayStyle(newStyle);
-      // Zmiana właśnie nastąpiła -> zablokuj selektor na kolejne 30 dni.
-      setPlayStyleChangedAt(new Date().toISOString());
-      const updatedCharacter = { ...characterData, play_style: newStyle };
-      setCharacterData(updatedCharacter);
-      localStorage.setItem('selectedCharacter', JSON.stringify(updatedCharacter));
-
-      alert('Styl gry został zaktualizowany!');
-    } catch (error) {
-      console.error('Błąd aktualizacji stylu gry:', error);
-      alert('Nie udało się zaktualizować stylu gry.');
-    }
-  };
-
   const handleBugSubmit = async () => {
     if (!bugDescription.trim()) {
       setBugFeedback({ type: 'error', text: 'Opisz proszę błąd.' });
@@ -382,11 +334,6 @@ function Settings() {
     );
   }
 
-  const nextStyleChangeMs = playStyleChangedAt
-    ? new Date(playStyleChangedAt).getTime() + PLAY_STYLE_COOLDOWN_DAYS * 86400000
-    : 0;
-  const styleLocked = nextStyleChangeMs > Date.now();
-  const styleDaysLeft = styleLocked ? Math.ceil((nextStyleChangeMs - Date.now()) / 86400000) : 0;
   const isStaff = userRole === 'admin' || userRole === 'mistrz_gry';
 
   // Wspólny wygląd list rozwijanych - bez pływających etykiet ("Wybierz status",
@@ -443,33 +390,6 @@ function Settings() {
           </Select>
         </FormControl>
         <SectionHint italic>{STATUS_OPTIONS[playerStatus]?.description}</SectionHint>
-      </SettingsSection>
-
-      {/* === STYL GRY === */}
-      <SettingsSection title="Styl gry" accent={raceAccent}>
-        <FormControl fullWidth disabled={styleLocked}>
-          <Select
-            value={playStyle}
-            disabled={styleLocked}
-            onChange={(e) => handlePlayStyleChange(e.target.value)}
-            sx={selectSx}
-          >
-            {Object.entries(PLAY_STYLE_OPTIONS).map(([key, style]) => (
-              <MenuItem key={key} value={key}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
-                  <Box sx={{ width: 9, height: 9, borderRadius: '50%', backgroundColor: style.color, flexShrink: 0 }} />
-                  {style.label}
-                </Box>
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        <SectionHint italic>{PLAY_STYLE_OPTIONS[playStyle]?.description}</SectionHint>
-        <SectionHint>
-          {styleLocked
-            ? `Kolejna zmiana możliwa za ${styleDaysLeft} ${styleDaysLeft === 1 ? 'dzień' : 'dni'}.`
-            : `Do zmiany raz na ${PLAY_STYLE_COOLDOWN_DAYS} dni. „Fabularnie" wyłącza Cię z PvP na arenie.`}
-        </SectionHint>
       </SettingsSection>
 
       {/* === ROZMIAR CZCIONKI === */}

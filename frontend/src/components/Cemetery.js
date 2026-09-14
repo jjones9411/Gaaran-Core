@@ -25,15 +25,8 @@ import toast from 'react-hot-toast';
 import GameToaster from './GameToaster';
 import { useAuth } from './AuthContext';
 import RaceDivider from './RaceDivider';
-import CityBackButton from './CityBackButton';
-
-// Mapowanie klucza/nazwy frakcji (rasy) na wariant grafiki dividera.
-const factionToFrame = (f) => {
-  const s = (f || '').toLowerCase();
-  if (/wampir|vampire|vamp/.test(s)) return 'vampire';
-  if (/wilko|wilk|wolf|lykan|lycan/.test(s)) return 'wolf';
-  return 'human';
-};
+import { useNavigate } from 'react-router-dom';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 const API_BASE = '/api';
 
@@ -51,6 +44,7 @@ const getToastStyle = (theme) => ({
 
 function Cemetery() {
   const theme = useTheme();
+  const navigate = useNavigate();
   const toastStyle = getToastStyle(theme);
   const { user } = useAuth();
   const token = localStorage.getItem('token');
@@ -174,8 +168,14 @@ function Cemetery() {
 
   return (
     <Box sx={{ py: 4, px: 3, minHeight: '100vh', bgcolor: theme.palette.background.default, position: 'relative' }}>
-      {/* Powrót do miasta - wspólny przycisk w ozdobnej ramce (CityBackButton) */}
-      <CityBackButton />
+      {/* Powrót na stronę główną */}
+      <Button
+        startIcon={<ArrowBackIcon />}
+        onClick={() => navigate('/home')}
+        sx={{ mb: 2, color: theme.palette.text.secondary }}
+      >
+        Powrót
+      </Button>
 
       <Box sx={{ maxWidth: 1400, mx: 'auto' }}>
         <Typography
@@ -292,7 +292,7 @@ function Cemetery() {
                 </Typography>
               </Box>
               {index < deadCharacters.length - 1 && (
-                <RaceDivider variant="bottom" frame={factionToFrame(char.faction)} sx={{ my: 0.5 }} />
+                <RaceDivider variant="bottom" raceKey={char.faction} sx={{ my: 0.5 }} />
               )}
               </React.Fragment>
             ))}

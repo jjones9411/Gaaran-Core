@@ -65,30 +65,16 @@ export default function useRaceColor(explicitRaceKey = null) {
 
   const race = races.find((r) => r.key === raceKey);
 
-  // Wariant ramki (grafiki w /ui/frames) wg rasy - rozpoznajemy po nazwie/kluczu.
-  const nm = `${race?.name || ''} ${raceKey || ''}`.toLowerCase();
-  let frame = 'human';
-  if (/wampir|vampire|vamp/.test(nm)) frame = 'vampire';
-  else if (/wilko|wilk|wolf|lykan|lycan/.test(nm)) frame = 'wolf';
-  else frame = 'human';
-
-  // Kolor akcentu bierzemy z KOLORU RASY ustawionego w panelu (baza), a gdy go brak
-  // - z domyślnego koloru danej rasy (te same wartości co w kreatorze). Dzięki temu
-  // motyw (primary.*), hovery i obwódki pasują do koloru rasy zamiast pomarańczu.
-  // Przygaszone kolory bazowe (Główny) dla trójki kanonicznej - używane też jako
-  // fallback zanim lista ras się załaduje. Rasy kanoniczne i tak biorą pełną,
-  // kuratorowaną paletę z getRaceColorSet (po nazwie/kluczu).
+  // Kolor akcentu bierzemy z KOLORU RASY ustawionego w panelu administracyjnym
+  // (races.color). Gdy rasy jeszcze nie znamy (ekrany przed grą) albo nie ma
+  // ustawionego koloru, zostaje domyślny akcent motywu.
   const HEX6 = /^#[0-9a-fA-F]{6}$/;
-  const FRAME_ACCENT_HEX = { human: '#63571D', wolf: '#1c321a', vampire: '#999999' };
-  const raceHex = HEX6.test(race?.color || '') ? race.color : FRAME_ACCENT_HEX[frame];
-  // Bez rasy (ekrany przed grą: login/rejestracja/reset) używamy kanonicznej
-  // palety wg `frame` (domyślnie 'human'), zamiast wpadać w wyliczaną paletę z
-  // DB-pomarańczu - dzięki temu auth jest spójnie w kolorach człowieka.
-  const colorSet = getRaceColorSet(raceHex, { name: race?.name || frame, key: raceKey || frame });
+  const DEFAULT_ACCENT_HEX = '#7a3b0f';
+  const raceHex = HEX6.test(race?.color || '') ? race.color : DEFAULT_ACCENT_HEX;
+  const colorSet = getRaceColorSet(raceHex);
 
   return {
     key: raceKey,
-    frame,
     hex: colorSet.primary,
     accent: colorSet.accent,
     strong: colorSet.strong,

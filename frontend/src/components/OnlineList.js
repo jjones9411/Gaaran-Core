@@ -27,61 +27,18 @@ import {
   Sort as SortIcon,
   WifiOff as OfflineIcon,
   Wifi as WifiIcon,
-  WbSunny as SunnyIcon,
-  NightsStay as MoonIcon,
-  Cloud as CloudIcon,
-  Opacity as RainIcon,
-  AcUnit as SnowIcon,
-  Thunderstorm as ThunderstormIcon,
-  Warning as WarningIcon,
-  Dangerous as DangerousIcon,
-  Air as AirIcon,
 } from '@mui/icons-material';
 import { debounce } from 'lodash';
-import toast from 'react-hot-toast';
 import GameToaster from './GameToaster';
 import { useTheme } from '@mui/material/styles';
-import { getPlayStyle } from './playStyle';
 import { getRaceColorSet } from './theme';
-import useRaceColor from './useRaceColor';
 import RoleBadge from './RoleBadge';
-import { getMoonPhase } from './moonPhase';
 
 // Constants
 const REFRESH_INTERVAL = 15000;
-const WEATHER_REFRESH_INTERVAL = 300000;
 const MAX_NICKNAME_LENGTH = 15;
 const TOOLTIP_DELAY = 500;
 const SEARCH_DEBOUNCE_MS = 300;
-
-// Weather definitions
-const WEATHER_CONDITIONS = {
-    sunny: { label: 'Słonecznie', icon: SunnyIcon, danger: 0 },
-    clear_night: { label: 'Bezchmurna noc', icon: MoonIcon, danger: 0 },
-    cloudy: { label: 'Pochmurno', icon: CloudIcon, danger: 0 },
-    rainy: { label: 'Deszcz', icon: RainIcon, danger: 1 },
-    snowy: { label: 'Śnieg', icon: SnowIcon, danger: 1 },
-    light_fog: { label: 'Lekka mgła', icon: CloudIcon, danger: 1 },
-    heavy_fog: { label: 'Gęsta mgła', icon: CloudIcon, danger: 2 },
-    thunderstorm: { label: 'Burza z piorunami', icon: ThunderstormIcon, danger: 2 },
-    hailstorm: { label: 'Grad', icon: SnowIcon, danger: 2 },
-    blizzard: { label: 'Śnieżyca', icon: SnowIcon, danger: 3 },
-    windstorm: { label: 'Wichura', icon: AirIcon, danger: 2 },
-    heatwave: { label: 'Upał', icon: SunnyIcon, danger: 1 },
-    dust_storm: { label: 'Burza pyłowa', icon: AirIcon, danger: 3 }
-};
-
-const MONTH_NAMES = [
-    'Stycznia', 'Lutego', 'Marca', 'Kwietnia', 'Maja', 'Czerwca',
-    'Lipca', 'Sierpnia', 'Września', 'Października', 'Listopada', 'Grudnia'
-];
-
-const SEASON_NAMES = {
-    winter: 'Zima',
-    spring: 'Wiosna',
-    summer: 'Lato',
-    autumn: 'Jesień'
-};
 
 const STATUS_OPTIONS = {
   looking: {
@@ -146,19 +103,6 @@ const truncateNickname = (nick, maxLength = MAX_NICKNAME_LENGTH) => {
 };
 
 
-const getSeason = (month) => {
-    if ([12, 1, 2].includes(month)) return 'winter';
-    if ([3, 4, 5].includes(month)) return 'spring';
-    if ([6, 7, 8].includes(month)) return 'summer';
-    return 'autumn';
-};
-
-const getDangerIcon = (danger, theme) => {
-    if (danger >= 4) return <DangerousIcon sx={{ fontSize: 14, color: '#9b2c2c' }} />;
-    if (danger >= 3) return <WarningIcon sx={{ fontSize: 14, color: '#d97706' }} />;
-    return null;
-};
-
 const useLocalStorage = (key, initialValue) => {
     const [storedValue, setStoredValue] = useState(() => {
         try {
@@ -180,293 +124,6 @@ const useLocalStorage = (key, initialValue) => {
 
     return [storedValue, setValue];
 };
-
-// ================================
-// GAME TIME HEADER COMPONENT
-// ================================
-const GameTimeHeader = React.memo(({ gameTime, weather, onRefresh, isRefreshing, raceCombat }) => {
-    const theme = useTheme();
-    
-    if (!gameTime || !weather) {
-        return (
-            <Paper sx={{ 
-                p: 1.5, 
-                mb: 1, 
-                backgroundColor: theme.palette.background.paper,
-                border: `2px solid ${theme.palette.divider}`,
-                borderRadius: '0',
-                backdropFilter: 'blur(10px)'
-            }}>
-                <Stack spacing={0.5}>
-                    <Skeleton variant="text" width="60%" height={24} sx={{ bgcolor: theme.palette.divider }} />
-                    <Skeleton variant="text" width="40%" height={16} sx={{ bgcolor: theme.palette.divider }} />
-                </Stack>
-            </Paper>
-        );
-    }
-
-    const weatherData = WEATHER_CONDITIONS[weather.type] || WEATHER_CONDITIONS.cloudy;
-    const WeatherIcon = weatherData.icon;
-    
-    const dateString = `${gameTime.day} ${MONTH_NAMES[gameTime.month - 1]} ${gameTime.year}`;
-    const timeString = `${String(gameTime.hour).padStart(2, '0')}:${String(gameTime.minute).padStart(2, '0')}`;
-    
-    const season = getSeason(gameTime.month);
-    const seasonName = SEASON_NAMES[season];
-    const dangerIcon = getDangerIcon(weather.danger, theme);
-
-    // Faza dnia: noc od 20:00 do 6:00 (spójne z backendem gamePhase.js).
-    // Wpływa na modyfikatory walki ras - dlatego pokazujemy ją przy zegarze.
-    const isNight = gameTime.hour >= 20 || gameTime.hour < 6;
-    const PhaseIcon = isNight ? MoonIcon : SunnyIcon;
-    const phaseLabel = isNight ? 'NOC' : 'DZIEŃ';
-    const phaseColor = isNight ? theme.palette.info.light : theme.palette.warning.main;
-
-    // Faza księżyca - wyliczana z daty świata (miesiące 30-dniowe, cykl 30 dni).
-    const moon = getMoonPhase(gameTime.year, gameTime.month, gameTime.day);
-
-    return (
-        <Paper sx={{
-            p: 1.5,
-            mb: 1,
-            position: 'relative',
-            overflow: 'hidden',
-            backgroundColor: theme.palette.background.paper,
-            border: `2px solid ${theme.palette.divider}`,
-            borderRadius: '0',
-            backdropFilter: 'blur(10px)',
-            boxShadow: `0 4px 15px ${theme.palette.primary.main}20`
-        }}>
-            <Stack spacing={0.5} sx={{ position: 'relative', zIndex: 1 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Box>
-                        {/* Data + godzina w jednej linii (bez ikonki kalendarza) */}
-                        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, flexWrap: 'wrap' }}>
-                            <Typography sx={{
-                                fontSize: 13,
-                                fontWeight: 'bold',
-                                color: theme.palette.primary.main,
-                                lineHeight: 1.2,
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.1em',
-                                textShadow: `0 0 10px ${theme.palette.primary.main}60`
-                            }}>
-                                {dateString}
-                            </Typography>
-                            <Typography sx={{
-                                fontSize: 16,
-                                fontWeight: 'bold',
-                                color: theme.palette.text.primary,
-                                letterSpacing: 1,
-                            }}>
-                                {timeString}
-                            </Typography>
-                        </Box>
-                        {/* Pora roku + pora dnia w jednej linii (bez ikon) */}
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
-                            <Chip
-                                label={seasonName}
-                                size="small"
-                                sx={{
-                                    height: 16,
-                                    fontSize: 9,
-                                    fontWeight: 'bold',
-                                    textTransform: 'uppercase',
-                                    backgroundColor: `${theme.palette.primary.main}30`,
-                                    color: theme.palette.primary.main,
-                                    border: `1px solid ${theme.palette.divider}`,
-                                    borderRadius: '0'
-                                }}
-                            />
-                            <Chip
-                                label={phaseLabel}
-                                size="small"
-                                sx={{
-                                    height: 16,
-                                    fontSize: 9,
-                                    fontWeight: 'bold',
-                                    textTransform: 'uppercase',
-                                    backgroundColor: `${phaseColor}22`,
-                                    color: phaseColor,
-                                    border: `1px solid ${phaseColor}66`,
-                                    borderRadius: '0',
-                                    '& .MuiChip-label': { px: 0.75 }
-                                }}
-                            />
-                        </Box>
-                    </Box>
-                    {/* Przycisk odświeżania pogody usunięty - chował się pod ozdobną ramką panelu. */}
-                </Box>
-
-                {/* Faza księżyca - nad linią pogody, stonowana */}
-                <Tooltip
-                    title={`${moon.name} — ${Math.round(moon.illumination * 100)}% oświetlenia tarczy`}
-                    arrow
-                    placement="bottom"
-                    componentsProps={{
-                        tooltip: {
-                            sx: {
-                                backgroundColor: theme.palette.background.paper,
-                                border: `2px solid ${theme.palette.divider}`,
-                                borderRadius: '0',
-                                backdropFilter: 'blur(20px)',
-                                color: theme.palette.text.primary,
-                                }
-                        },
-                        arrow: { sx: { color: theme.palette.text.secondary } }
-                    }}
-                >
-                    <Box sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 0.75,
-                        p: 0.75,
-                        borderRadius: '0',
-                        bgcolor: theme.palette.background.default,
-                        border: `1px solid ${theme.palette.divider}`,
-                        cursor: 'help',
-                        transition: 'all 0.2s ease',
-                        '&:hover': {
-                            bgcolor: `${theme.palette.info.light}18`,
-                            borderColor: `${theme.palette.info.light}66`,
-                        }
-                    }}>
-                        <Box component="span" sx={{ fontSize: 16, lineHeight: 1 }}>{moon.emoji}</Box>
-                        <Typography sx={{
-                            fontSize: 11,
-                            fontWeight: 'bold',
-                            color: theme.palette.info.light,
-                            textTransform: 'uppercase',
-                            letterSpacing: 0.5,
-                            
-                        }}>
-                            {moon.name}
-                        </Typography>
-                    </Box>
-                </Tooltip>
-
-                <Tooltip
-                    title={
-                        <Box sx={{ textAlign: 'center' }}>
-                            <Typography sx={{ fontWeight: 'bold', mb: 0.5, }}>
-                                {weather.label}
-                            </Typography>
-                            <Typography sx={{ fontSize: 11, }}>
-                                {weather.description}
-                            </Typography>
-                            {weather.danger >= 2 && (
-                                <Typography sx={{ 
-                                    fontSize: 10, 
-                                    color: theme.palette.warning.main, 
-                                    mt: 0.5,
-                                    
-                                    textTransform: 'uppercase'
-                                }}>
-                                    ⚠️ NIEBEZPIECZNIE!
-                                </Typography>
-                            )}
-                        </Box>
-                    }
-                    arrow
-                    placement="bottom"
-                    componentsProps={{
-                        tooltip: {
-                            sx: {
-                                backgroundColor: theme.palette.background.paper,
-                                border: `2px solid ${theme.palette.divider}`,
-                                borderRadius: '0',
-                                backdropFilter: 'blur(20px)',
-                                color: theme.palette.text.primary
-                            }
-                        },
-                        arrow: {
-                            sx: {
-                                color: theme.palette.text.secondary
-                            }
-                        }
-                    }}
-                >
-                    <Box sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 0.75,
-                        p: 0.75,
-                        borderRadius: '0',
-                        bgcolor: theme.palette.background.default,
-                        border: `1px solid ${theme.palette.divider}`,
-                        cursor: 'help',
-                        transition: 'all 0.2s ease',
-                        '&:hover': {
-                            bgcolor: `${theme.palette.primary.main}20`,
-                            borderColor: theme.palette.primary.main,
-                        }
-                    }}>
-                        <WeatherIcon sx={{ 
-                            color: theme.palette.primary.main, 
-                            fontSize: 18
-                        }} />
-                        <Typography sx={{
-                            fontSize: 11,
-                            fontWeight: 'bold',
-                            color: theme.palette.primary.main,
-                            textTransform: 'uppercase',
-                            letterSpacing: 0.5,
-                            
-                            textShadow: `0 0 10px ${theme.palette.primary.main}60`
-                        }}>
-                            {weather.emoji} {weather.label}
-                        </Typography>
-                        {dangerIcon && (
-                            <Box sx={{ ml: 'auto' }}>
-                                {dangerIcon}
-                            </Box>
-                        )}
-                    </Box>
-                </Tooltip>
-
-                {/* Wpływ pory dnia na TWOJĄ rasę (mechanika dzień/noc) */}
-                {raceCombat && (() => {
-                    const pct = isNight ? raceCombat.nightPct : raceCombat.dayPct;
-                    if (!pct) return null;
-                    const positive = pct > 0;
-                    return (
-                        <Tooltip
-                            arrow
-                            title={`Modyfikator walki Twojej rasy zależny od pory doby. Noc: 20:00–5:59, dzień: 6:00–19:59. Wartość zmienia siłę Twojego ataku i obrony w bieżącej porze — np. wampiry słabną w dzień, a nocą odzyskują przewagę.`}
-                        >
-                        <Box sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 0.5,
-                            p: 0.5,
-                            borderRadius: '0',
-                            cursor: 'help',
-                            bgcolor: theme.palette.background.default,
-                            border: `1px solid ${positive ? theme.palette.success.main : theme.palette.error.main}55`,
-                        }}>
-                            <PhaseIcon sx={{ fontSize: 13, color: phaseColor }} />
-                            <Typography sx={{
-                                fontSize: 10,
-                                fontWeight: 'bold',
-                                
-                                textTransform: 'uppercase',
-                                letterSpacing: 0.3,
-                                color: theme.palette.text.secondary,
-                            }}>
-                                {raceCombat.name}:&nbsp;
-                                <Box component="span" sx={{ color: positive ? theme.palette.success.main : theme.palette.error.main }}>
-                                    {positive ? '+' : ''}{pct}% w walce
-                                </Box>
-                                &nbsp;({isNight ? 'noc' : 'dzień'})
-                            </Typography>
-                        </Box>
-                        </Tooltip>
-                    );
-                })()}
-            </Stack>
-        </Paper>
-    );
-});
 
 // ================================
 // PLAYER STATUS INDICATOR
@@ -714,14 +371,6 @@ const PlayerListItem = React.memo(({
                                     {player.gender || '-'}
                                 </Box>
                             </Typography>
-                            <Typography sx={{
-                                fontSize: 12,
-                                color: theme.palette.text.secondary,
-                                }}>
-                                STYL: <Box component="span" sx={{ color: getPlayStyle(player.playStyle).color, fontWeight: 'bold' }}>
-                                    {getPlayStyle(player.playStyle).short}
-                                </Box>
-                            </Typography>
                         </Box>
 
                         {/* ROLA FABULARNA + STATUS - jeden blok "co postać robi/kim
@@ -922,11 +571,8 @@ const OnlineList = React.memo(({ onNavigate }) => {
     const scrollPositionRef = React.useRef(0);
 
     const [onlinePlayers, setOnlinePlayers] = useState([]);
-    const [gameTime, setGameTime] = useState(null);
-    const [weather, setWeather] = useState(null);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
-    const [weatherRefreshing, setWeatherRefreshing] = useState(false);
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
@@ -944,16 +590,6 @@ const OnlineList = React.memo(({ onNavigate }) => {
     const [hoveredId, setHoveredId] = useState(null);
 
     const [favorites, setFavorites] = useLocalStorage('playerFavorites', []);
-
-    // Modyfikator walki TWOJEJ rasy zależny od pory dnia (mechanika dzień/noc) -
-    // pokazywany w panelu czasu, żeby gracz widział realny efekt.
-    const myRace = useRaceColor();
-    const myRaceData = races.find(r => r.key === myRace.key);
-    const myRaceCombat = myRaceData ? {
-        name: myRaceData.name,
-        dayPct: Number(myRaceData.combat_day_percent) || 0,
-        nightPct: Number(myRaceData.combat_night_percent) || 0,
-    } : null;
 
     // Pobierz listę ras (do mapowania klucza rasy na czytelną nazwę)
     useEffect(() => {
@@ -1012,52 +648,6 @@ const OnlineList = React.memo(({ onNavigate }) => {
             console.error('Error fetching favorites:', err);
         }
     }, [token, setFavorites]);
-
-    const fetchWeather = useCallback(async (isRefresh = false) => {
-        if (!token) return;
-        if (isRefresh) setWeatherRefreshing(true);
-
-        try {
-            const response = await fetch('/api/weather', {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-            const data = await response.json();
-
-            if (data.success && data.weather && data.gameTime) {
-                setWeather(data.weather);
-                setGameTime(data.gameTime);
-                
-                localStorage.setItem('cachedWeather', JSON.stringify(data.weather));
-                localStorage.setItem('cachedGameTime', JSON.stringify(data.gameTime));
-                
-                if (isRefresh) {
-                    toast.success(`Pogoda: ${data.weather.emoji} ${data.weather.label}`, toastStyle);
-                }
-            }
-        } catch (err) {
-            console.error('Error fetching weather:', err);
-            
-            try {
-                const cachedWeather = localStorage.getItem('cachedWeather');
-                const cachedTime = localStorage.getItem('cachedGameTime');
-                if (cachedWeather && cachedTime) {
-                    setWeather(JSON.parse(cachedWeather));
-                    setGameTime(JSON.parse(cachedTime));
-                }
-            } catch (cacheErr) {
-                console.error('Cache load error:', cacheErr);
-            }
-        } finally {
-            setWeatherRefreshing(false);
-        }
-    }, [token, toastStyle]);
 
     const fetchOnlinePlayers = useCallback(async (isRefresh = false) => {
         if (!token) return;
@@ -1129,7 +719,6 @@ const OnlineList = React.memo(({ onNavigate }) => {
     // INITIAL LOAD
     // ================================
     useEffect(() => {
-        fetchWeather();
         fetchOnlinePlayers();
         fetchFavorites();
 
@@ -1137,15 +726,10 @@ const OnlineList = React.memo(({ onNavigate }) => {
             fetchOnlinePlayers(true);
         }, REFRESH_INTERVAL);
 
-        const weatherInterval = setInterval(() => {
-            fetchWeather();
-        }, WEATHER_REFRESH_INTERVAL);
-
         return () => {
             clearInterval(playersInterval);
-            clearInterval(weatherInterval);
         };
-    }, [fetchWeather, fetchOnlinePlayers, fetchFavorites]);
+    }, [fetchOnlinePlayers, fetchFavorites]);
 
     // ================================
     // RESTORE SCROLL POSITION
@@ -1232,10 +816,6 @@ const OnlineList = React.memo(({ onNavigate }) => {
         fetchOnlinePlayers(true);
     }, [fetchOnlinePlayers]);
 
-    const handleWeatherRefresh = useCallback(() => {
-        fetchWeather(true);
-    }, [fetchWeather]);
-
     // ================================
     // TOOLTIP CONTROL (jeden otwarty naraz)
     // ================================
@@ -1272,14 +852,6 @@ const OnlineList = React.memo(({ onNavigate }) => {
             flexDirection: 'column',  // DODANE - układ kolumnowy
             minHeight: 0  // DODANE - ważne dla scrollowania
         }}>
-            <GameTimeHeader
-                gameTime={gameTime}
-                weather={weather}
-                onRefresh={handleWeatherRefresh}
-                isRefreshing={weatherRefreshing}
-                raceCombat={myRaceCombat}
-            />
-
             {!isConnected && (
                 <Alert 
                     severity="warning" 
@@ -1695,7 +1267,6 @@ const OnlineList = React.memo(({ onNavigate }) => {
 
 // Nazwa do React DevTools - bez tego komponenty owiniete w React.memo
 // pokazuja sie jako "Anonymous" i nie da sie ich znalezc w drzewie.
-GameTimeHeader.displayName = 'GameTimeHeader';
 PlayerStatusIndicator.displayName = 'PlayerStatusIndicator';
 OnlineListSkeleton.displayName = 'OnlineListSkeleton';
 PlayerListItem.displayName = 'PlayerListItem';

@@ -20,7 +20,6 @@ import {
   Checkbox,
   FormControlLabel,
   FormGroup,
-  MenuItem,
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
@@ -38,7 +37,6 @@ import {
   People as PeopleIcon,
   Add as AddIcon,
   Pets as PetsIcon,
-  Inventory as InventoryIcon,
   Email as EmailIcon,
 } from '@mui/icons-material';
 import ReactQuill from 'react-quill';
@@ -54,9 +52,6 @@ import {
   dangerTextReadable,
 } from './PanelUI';
 import { getUserRole, formatRoleForDisplay } from './AuthContext';
-import WeatherIllnessAdminPanel from './WeatherIllnessAdminPanel';
-import MonsterAdminPanel from './MonsterAdminPanel';
-import ItemAdminPanel from './ItemAdminPanel';
 import RaceAdminPanel from './RaceAdminPanel';
 import ClassAdminPanel from './ClassAdminPanel';
 
@@ -114,11 +109,6 @@ const AdminPanel = () => {
   const [editResidentMessageContent, setEditResidentMessageContent] = useState('');
   const [residentMessagesLoading, setResidentMessagesLoading] = useState(false);
 
-  const [gameYear, setGameYear] = useState('');
-  const [gameMonth, setGameMonth] = useState('');
-  const [gameDay, setGameDay] = useState('');
-  const [gameHour, setGameHour] = useState('');
-  
   const [blockUserId, setBlockUserId] = useState('');
   const [blockDays, setBlockDays] = useState('');
   const [blockUserData, setBlockUserData] = useState(null);
@@ -131,40 +121,6 @@ const AdminPanel = () => {
   const [changeNickCharacterId, setChangeNickCharacterId] = useState('');
   const [newNickname, setNewNickname] = useState('');
   const [currentNickname, setCurrentNickname] = useState('');
-
-  // === PRZESYŁKA MG: towary luksusowe i z czarnego rynku ===
-  // Te towary nie mają w grze żadnego źródła produkcji ani nie da się ich kupić
-  // na Rynku - to jedyny kanał, którym trafiają do świata. Stąd potwierdzanie ID:
-  // podgląd musi poprzedzić wysyłkę, a `grantLookup.confirmUserId` jedzie do
-  // serwera jako dowód, że MG rozwinął ID w konkretne imię i konto
-  // (backend/routes/adminResources.js). Podgląd przyjmuje ID postaci ALBO gracza.
-  const [grantCharacterId, setGrantCharacterId] = useState('');
-  // Gdy w podglądzie padło ID GRACZA, MG musi jeszcze wskazać, która postać.
-  const [grantTargetCharacter, setGrantTargetCharacter] = useState(null);
-  const [grantLookup, setGrantLookup] = useState(null);
-  const [grantLookupLoading, setGrantLookupLoading] = useState(false);
-  const [grantCatalog, setGrantCatalog] = useState([]);
-  const [grantMaxQuantity, setGrantMaxQuantity] = useState(1000);
-  const [grantResourceId, setGrantResourceId] = useState('');
-  const [grantQuantity, setGrantQuantity] = useState(1);
-  const [grantReason, setGrantReason] = useState('');
-  const [grantSending, setGrantSending] = useState(false);
-
-  // Katalog towarów, które wolno wysłać przesyłką MG (luksusy + czarny rynek).
-  // Lista żyje w backend/utils/marketPricing.js, więc pobieramy ją z serwera
-  // zamiast dublować na froncie.
-  useEffect(() => {
-    fetch('/api/admin/resource-grant/catalog', {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-    })
-      .then(res => (res.ok ? res.json() : null))
-      .then(data => {
-        if (!data) return;
-        setGrantCatalog(Array.isArray(data.resources) ? data.resources : []);
-        if (data.maxQuantity) setGrantMaxQuantity(data.maxQuantity);
-      })
-      .catch(err => console.error('Błąd pobierania katalogu przesyłek MG:', err));
-  }, []);
 
   const [deleteUserId, setDeleteUserId] = useState('');
   const [userToDelete, setUserToDelete] = useState(null);
@@ -602,79 +558,6 @@ const handleForceLogout = async () => {
       setCurrentNickname('');
     } catch (error) {
       alert(error.message);
-    }
-  };
-
-  // === PRZESYŁKA MG ===
-  // Krok 1: rozwiń ID w konkretnego odbiorcę. Przyjmuje ID postaci ALBO ID gracza -
-  // w drugim przypadku serwer zwraca listę postaci i MG wskazuje, do której wysyła.
-  // Bez tego kroku wysyłka jest zablokowana: z samego "42" nie widać, czyja to
-  // postać, a pomyłka o cyfrę oznacza wsypanie luksusów obcemu graczowi.
-  const handleGrantLookup = async () => {
-    if (!grantCharacterId) {
-      alert('Podaj ID postaci lub ID gracza');
-      return;
-    }
-    setGrantLookupLoading(true);
-    try {
-      const response = await fetch(`/api/admin/resource-grant/lookup/${grantCharacterId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Błąd podglądu odbiorcy');
-      setGrantLookup(data);
-      // ID postaci = odbiorca gotowy. ID gracza = trzeba jeszcze wybrać postać.
-      setGrantTargetCharacter(data.matchedBy === 'character' ? data.character : null);
-    } catch (error) {
-      alert(error.message);
-      setGrantLookup(null);
-      setGrantTargetCharacter(null);
-    } finally {
-      setGrantLookupLoading(false);
-    }
-  };
-
-  // Krok 2: wyślij. `confirmUserId` z podglądu jest twardą bramką po stronie
-  // serwera - jeśli postać należy do innego konta niż to z podglądu, przesyłka
-  // się zatrzyma i podgląd odświeży się sam.
-  const handleGrantSend = async () => {
-    if (!grantLookup || !grantTargetCharacter || !grantResourceId) {
-      alert('Najpierw sprawdź ID, wybierz postać i towar');
-      return;
-    }
-    setGrantSending(true);
-    try {
-      const response = await fetch('/api/admin/resource-grant', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          characterId: grantTargetCharacter.id,
-          resourceId: grantResourceId,
-          quantity: Number(grantQuantity),
-          reason: grantReason.trim(),
-          confirmUserId: grantLookup.confirmUserId,
-        }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        if (data.idMismatch) {
-          alert(`${data.error}\n\nKonto z podglądu: #${data.providedUserId}\nKonto teraz: #${data.expectedUserId}`);
-          await handleGrantLookup();
-          return;
-        }
-        throw new Error(data.error || 'Błąd wysyłki');
-      }
-      alert(data.message);
-      setGrantQuantity(1);
-      setGrantReason('');
-      await handleGrantLookup(); // odśwież stan posiadania odbiorcy
-    } catch (error) {
-      alert(error.message);
-    } finally {
-      setGrantSending(false);
     }
   };
 
@@ -1160,14 +1043,6 @@ const handleForceLogout = async () => {
 
 
   // Conditional rendering for different views
-  if (currentView === 'monsters') {
-    return <MonsterAdminPanel onBack={() => setCurrentView('main')} />;
-  }
-
-  if (currentView === 'items') {
-    return <ItemAdminPanel onBack={() => setCurrentView('main')} />;
-  }
-
   if (currentView === 'races') {
     return <RaceAdminPanel onBack={() => setCurrentView('main')} />;
   }
@@ -1199,8 +1074,6 @@ const handleForceLogout = async () => {
             i podpisy, kolor nie musi się różnić przy każdym z nich. */}
         {[
           { label: 'Bugtrack', icon: <BugReportIcon />, to: '/home/adminpanel/bugtrack' },
-          { label: 'Potwory', icon: <PetsIcon />, view: 'monsters' },
-          { label: 'Przedmioty', icon: <InventoryIcon />, view: 'items' },
           { label: 'Rasy', icon: <PetsIcon />, view: 'races' },
           { label: 'Klasy', icon: <CategoryIcon />, view: 'classes' },
         ].map(({ label, icon, to, view }) => (
@@ -1828,187 +1701,6 @@ const handleForceLogout = async () => {
         </Accordion>
       </Paper>
 
-      {/* Sekcja: Przesyłka MG - towary luksusowe i z czarnego rynku.
-          Te towary nie mają w grze źródła produkcji ani nie da się ich kupić na
-          Rynku (gm_only w utils/marketPricing.js), więc to jedyny kanał, którym
-          trafiają do świata - do fabularnego rozegrania przez MG. */}
-      <Paper elevation={0} sx={panelSectionSx(theme)}>
-        <PanelSectionHeading
-          theme={theme}
-          eyebrow="Fabuła"
-          title="Przesyłka do Postaci"
-          icon={<InventoryIcon />}
-        />
-
-        <Accordion
-          expanded={activeSection === 'resourceGrant'}
-          onChange={() => setActiveSection(activeSection === 'resourceGrant' ? null : 'resourceGrant')}
-          sx={panelAccordionSx(theme)}
-        >
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <InventoryIcon color="warning" />
-              <Typography variant="h6">Wyślij Towar Luksusowy / z Czarnego Rynku</Typography>
-            </Box>
-          </AccordionSummary>
-          <AccordionDetails>
-            <Box sx={{ mt: 2 }}>
-              <Alert severity="info" sx={{ mb: 3 }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
-                  Jak to działa:
-                </Typography>
-                <Typography variant="body2" sx={{ mb: 0.5 }}>
-                  • Jedwab, herbata, wino, relikty i reszta towarów zamorskich <b>nie mają w grze
-                  źródła produkcji</b> — nie da się ich zdobyć zbieractwem ani kupić na Rynku
-                </Typography>
-                <Typography variant="body2" sx={{ mb: 0.5 }}>
-                  • To jedyny kanał, którym trafiają do świata — do rozegrania fabularnie
-                  (statek kupiecki, łup, zapłata od NPC-a)
-                </Typography>
-                <Typography variant="body2" sx={{ mb: 0.5 }}>
-                  • Podaj <b>ID postaci lub ID gracza</b> i sprawdź — zobaczysz imię postaci
-                  i konto właściciela, zanim cokolwiek wyślesz
-                </Typography>
-                <Typography variant="body2">
-                  • Powód trafia do <b>dziennika postaci</b>, więc gracz przeczyta go w grze
-                </Typography>
-              </Alert>
-
-              <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start', mb: 2, flexWrap: 'wrap' }}>
-                <TextField
-                  label="ID Postaci lub ID Gracza"
-                  type="number"
-                  value={grantCharacterId}
-                  onChange={(e) => { setGrantCharacterId(e.target.value); setGrantLookup(null); setGrantTargetCharacter(null); }}
-                  placeholder="np. 42"
-                  sx={{ minWidth: 240 }}
-                />
-                <Button
-                  variant="contained"
-                  color="info"
-                  onClick={handleGrantLookup}
-                  disabled={!grantCharacterId || grantLookupLoading}
-                  sx={{ mt: 1 }}
-                >
-                  {grantLookupLoading ? 'Sprawdzam...' : '🔎 Sprawdź ID'}
-                </Button>
-              </Box>
-
-              {grantLookup && (
-                <>
-                  <Alert severity={grantTargetCharacter ? 'success' : 'info'} sx={{ mb: 2 }}>
-                    <Typography variant="body2">
-                      Konto: <b>{grantLookup.owner.username}</b> (ID gracza #{grantLookup.owner.userId}),
-                      rola: {formatRoleForDisplay(grantLookup.owner.role)}
-                    </Typography>
-                    {grantTargetCharacter && (
-                      <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mt: 0.5 }}>
-                        Odbiorca: {grantTargetCharacter.name} (ID postaci #{grantTargetCharacter.id})
-                        {grantTargetCharacter.level ? `, poziom ${grantTargetCharacter.level}` : ''}
-                        {grantTargetCharacter.race ? `, ${getRaceName(grantTargetCharacter.race)}` : ''}
-                      </Typography>
-                    )}
-                  </Alert>
-
-                  {/* Podano ID GRACZA - trzeba jeszcze wskazać, do której postaci. */}
-                  {grantLookup.matchedBy === 'user' && (
-                    <Box sx={{ mb: 2 }}>
-                      <Typography variant="body2" sx={{ mb: 1 }}>
-                        To jest ID gracza — wybierz postać, która ma dostać przesyłkę:
-                      </Typography>
-                      {grantLookup.characters.length === 0 ? (
-                        <Alert severity="warning">To konto nie ma żadnej postaci.</Alert>
-                      ) : (
-                        <TextField
-                          select
-                          fullWidth
-                          label="Postać odbiorcy"
-                          value={grantTargetCharacter?.id || ''}
-                          onChange={(e) => {
-                            const picked = grantLookup.characters.find(c => String(c.id) === String(e.target.value));
-                            setGrantTargetCharacter(picked || null);
-                          }}
-                        >
-                          {grantLookup.characters.map((c) => (
-                            <MenuItem key={c.id} value={c.id}>
-                              {c.name} (#{c.id}) — poziom {c.level}{c.race ? `, ${getRaceName(c.race)}` : ''}
-                            </MenuItem>
-                          ))}
-                        </TextField>
-                      )}
-                    </Box>
-                  )}
-
-                  {grantLookup.owned?.length > 0 && (
-                    <Alert severity="info" sx={{ mb: 2 }}>
-                      <Typography variant="body2">
-                        Ta postać już ma: {grantLookup.owned.map(o => `${o.quantity}× ${o.name}`).join(', ')}
-                      </Typography>
-                    </Alert>
-                  )}
-
-                  <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
-                    <TextField
-                      select
-                      label="Towar"
-                      value={grantResourceId}
-                      onChange={(e) => setGrantResourceId(e.target.value)}
-                      sx={{ minWidth: 280 }}
-                    >
-                      {grantCatalog.map((r) => (
-                        <MenuItem key={r.id} value={r.id}>
-                          {r.name} — {r.origin === 'luxury' ? 'luksus' : 'czarny rynek'} (wycena {Number(r.basePrice).toLocaleString()} z)
-                        </MenuItem>
-                      ))}
-                    </TextField>
-                    <TextField
-                      label="Ilość"
-                      type="number"
-                      value={grantQuantity}
-                      onChange={(e) => setGrantQuantity(Math.max(1, Math.min(grantMaxQuantity, parseInt(e.target.value, 10) || 1)))}
-                      inputProps={{ min: 1, max: grantMaxQuantity }}
-                      sx={{ width: 140 }}
-                    />
-                  </Box>
-
-                  <TextField
-                    fullWidth
-                    label="Powód / uzasadnienie fabularne"
-                    value={grantReason}
-                    onChange={(e) => setGrantReason(e.target.value)}
-                    placeholder="np. Zapłata od kupca z Zatoki za odzyskany ładunek"
-                    multiline
-                    rows={2}
-                    sx={{ mb: 2 }}
-                    helperText="Gracz zobaczy to w dzienniku postaci — napisz tak, żeby dało się to rozegrać"
-                  />
-
-                  <Button
-                    variant="contained"
-                    color="warning"
-                    onClick={handleGrantSend}
-                    disabled={grantSending || !grantTargetCharacter || !grantResourceId || grantReason.trim().length < 3}
-                  >
-                    {grantSending
-                      ? 'Wysyłam...'
-                      : grantTargetCharacter
-                        ? `📦 Wyślij do: ${grantTargetCharacter.name} (#${grantTargetCharacter.id})`
-                        : '📦 Wyślij przesyłkę'}
-                  </Button>
-
-                  <Alert severity="warning" sx={{ mt: 2 }}>
-                    Wysyłka jest wiązana z kontem z powyższego podglądu. Jeśli postać należy do
-                    innego gracza, niż pokazał podgląd, przesyłka zostanie wstrzymana, a podgląd
-                    odświeży się sam. Każda przesyłka trafia do rejestru admina (kto, komu, co,
-                    ile i dlaczego).
-                  </Alert>
-                </>
-              )}
-            </Box>
-          </AccordionDetails>
-        </Accordion>
-      </Paper>
-
       {/* Sekcja: Blokowanie i Moderacja */}
       <Paper elevation={0} sx={panelSectionSx(theme)}>
         <PanelSectionHeading
@@ -2275,11 +1967,9 @@ const handleForceLogout = async () => {
         )}
       </Paper>
 
-      {/* Sekcja chorób pogodowych + Tawerna (tylko admin) */}
+      {/* Sekcja Tawerny (tylko admin) */}
       {isAdmin && (
       <>
-      <WeatherIllnessAdminPanel />
-
       <Paper elevation={0} sx={panelSectionSx(theme)}>
         <PanelSectionHeading
           theme={theme}

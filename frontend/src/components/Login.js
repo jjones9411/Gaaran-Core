@@ -10,7 +10,6 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import GameBannerSection from './GameBannerSection';
 import AuthBackdrop from './AuthBackdrop';
 import AuthFrame from './AuthFrame';
 import { appColors, authPanelSx, authFieldSx, authGold, authGoldLight } from './theme';
@@ -773,8 +772,6 @@ return (
         </Grid>
       </Fade>
 
-      {/* Sekcja z banerami innych gier */}
-      <GameBannerSection />
     </Container>
   </Box>
 );

@@ -1,15 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
-import { Box, Button, Collapse, Avatar, Tooltip, Typography, LinearProgress, Divider, Badge, IconButton, Menu, MenuItem, ListItemText } from '@mui/material';
+import { Box, Button, Collapse, Avatar, Tooltip, Typography, Divider, Badge, IconButton, Menu, MenuItem, ListItemText } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Menu as MenuIcon, Star as StarIcon, People as PeopleIcon, ExpandMore as ExpandMoreIcon, ExpandLess as ExpandLessIcon } from '@mui/icons-material';
+import { Menu as MenuIcon, People as PeopleIcon, ExpandMore as ExpandMoreIcon, ExpandLess as ExpandLessIcon } from '@mui/icons-material';
 import { NarratorMark } from './NarratorAvatar';
 import { useTheme } from '@mui/material/styles';
 import { appColors } from './theme';
 import useResponsive from './useResponsive';
 import useHudPolling from './useHudPolling';
-import ActiveBuffsBadge from './ActiveBuffsBadge';
 import { useAuth } from './AuthContext';
-import { expNeededForNextLevel } from './characterFormulas';
 
 // Kolory motyw wizualny - jedno źródło prawdy dla całego pliku.
 // Rodzina "rust" (akcent) to GETTERY czytające żywe appColors - a te są nadpisywane
@@ -30,8 +28,6 @@ const apoColors = {
   error: appColors.dangerSoft,
   errorHover: appColors.dangerSoftHover,
 };
-// Tło toru paska HP/staminy - celowo jaśniejsze niż bgVeryDark używane w kartach
-const statBarTrackBg = 'rgba(0, 0, 0, 0.6)';
 
 function ParticipantList({ participants, onUserClick, races = [] }) {
   const theme = useTheme();
@@ -243,60 +239,6 @@ function ParticipantList({ participants, onUserClick, races = [] }) {
   );
 }
 
-// Uwaga: `theme` NIE jest tu w zasięgu (to funkcja modułowa, nie ciało komponentu),
-// więc kolor domyślny musi lecieć z hooka w środku. Wcześniej stało w domyślnym
-// parametrze i wywaliłoby sidebar przy pierwszym użyciu <StatBar> bez `color`.
-function StatBar({ label, current, max, color, icon = null, showValues = false }) {
-  const theme = useTheme();
-  const barColor = color || theme.palette.text.secondary;
-  // Obcięte do 0-100: sam pasek i tak był clampowany, ale liczba obok nie -
-  // stąd "117%" przy pasku napchanym do pełna.
-  const percentage = max > 0 ? Math.min(100, Math.max(0, (current / max) * 100)) : 0;
-
-  return (
-    <Box sx={{ mb: 1.2 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
-        <Box sx={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 0.5,
-          color: apoColors.textLight,
-          fontSize: '11px',
-          fontWeight: 'bold',
-          
-          textTransform: 'uppercase',
-          letterSpacing: '0.1em'
-        }}>
-          {icon}
-          {label}
-        </Box>
-        <Box sx={{
-          color: barColor,
-          fontSize: '12px',
-          fontWeight: 'bold',
-          }}>
-          {showValues ? `${Math.floor(current)}/${Math.floor(max)}` : `${percentage.toFixed(0)}%`}
-        </Box>
-      </Box>
-      <LinearProgress
-        variant="determinate"
-        value={percentage}
-        sx={{
-          height: 10,
-          borderRadius: '0',
-          backgroundColor: statBarTrackBg,
-          '& .MuiLinearProgress-bar': {
-            backgroundColor: barColor,
-            borderRadius: '0',
-            boxShadow: `0 0 8px ${barColor}60`,
-            transition: 'transform 0.8s ease-in-out'
-          }
-        }}
-      />
-    </Box>
-  );
-}
-
 function Sidebar({ isSidebarOpen, setIsSidebarOpen, onShowOnlineList = null }) {
   const theme = useTheme();
   const navigate = useNavigate();
@@ -332,7 +274,7 @@ function Sidebar({ isSidebarOpen, setIsSidebarOpen, onShowOnlineList = null }) {
   const {
     characterData, setCharacterData, loadingCharacter,
     generalSessionUnreadCount, privateSessionUnreadCount, messagesUnreadCount,
-    tavernUnread, journalTodoCount, journalNarrationTodoCount, activeBuffs,
+    tavernUnread, journalTodoCount, journalNarrationTodoCount,
   } = useHudPolling(token, characterId);
 
   const isPrivateSessionPage = location.pathname.startsWith('/home/privateSessions');
@@ -515,19 +457,6 @@ function Sidebar({ isSidebarOpen, setIsSidebarOpen, onShowOnlineList = null }) {
     } 
   };
 
-// Próg awansu - liczony tym samym wzorem co backend (characterFormulas.js).
-// Sidebar miał własną, martwą kopię starej krzywej (500 EXP * 1.03^poziom),
-// przez co pasek XP na mobile pokazywał np. 117% i wyglądał, jakby poziom
-// się nie wbijał, mimo że backend liczył zupełnie inny (wyższy) próg.
-const expToNextLevel = Math.max(1, expNeededForNextLevel(characterData.level));
-
-// Exp jest resetowany do 0 po level up, więc characterData.experience to już progress
-const expInCurrentLevel = Math.max(0, Math.floor(characterData.experience || 0));
-
-// Procent postępu - obcięty do 100%, żeby chwilowy rozjazd danych z HUD-a
-// (poziom z jednego odpytania, exp z kolejnego) nie wypisywał "117%"
-const expPercent = Math.min(100, Math.round((expInCurrentLevel / expToNextLevel) * 100));
-
 if (focusMode) return null;
   
 if (isSmall || isVerySmall) {
@@ -610,148 +539,6 @@ return (
       }}>
         {loadingUsername ? '[ ... ]' : username}
       </Typography>
-      <Typography sx={{
-        color: apoColors.textGray,
-        
-        fontSize: '9px',
-        textTransform: 'uppercase',
-        letterSpacing: '0.05em',
-        mb: 0.3
-      }}>
-        Lvl {characterData.level}
-      </Typography>
-
-      {/* Czasowe bufy z mikstur - widoczne tylko gdy jakiś leci */}
-      {activeBuffs.length > 0 && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 0.4 }}>
-          <ActiveBuffsBadge buffs={activeBuffs} accentColor={apoColors.rust} />
-        </Box>
-      )}
-
-      {/* Mini paski statystyk */}
-      {!loadingCharacter && (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.3 }}>
-          {/* HP Bar */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <Typography sx={{
-              fontSize: '7px',
-              fontWeight: 'bold',
-              
-              color: theme.palette.error.text,
-              minWidth: '18px'
-            }}>
-              HP
-            </Typography>
-            <Box sx={{
-              flex: 1,
-              height: 4,
-              backgroundColor: apoColors.bgVeryDark,
-              border: `1px solid ${apoColors.rustBorder}`,
-              borderRadius: '0',
-              position: 'relative',
-              overflow: 'hidden'
-            }}>
-              <Box sx={{
-                height: '100%',
-                width: `${Math.min((characterData.hp / characterData.maxHp) * 100, 100)}%`,
-                backgroundColor: theme.palette.error.main,
-                boxShadow: `0 0 4px ${theme.palette.error.main}80`,
-                transition: 'width 0.8s ease-in-out'
-              }} />
-            </Box>
-            <Typography sx={{
-              fontSize: '7px',
-              fontWeight: 'bold',
-              
-              color: apoColors.rust,
-              minWidth: '32px',
-              textAlign: 'right'
-            }}>
-              {Math.floor(characterData.hp)}/{Math.floor(characterData.maxHp)}
-            </Typography>
-          </Box>
-
-          {/* Stamina Bar */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <Typography sx={{
-              fontSize: '7px',
-              fontWeight: 'bold',
-              
-              color: theme.palette.success.text,
-              minWidth: '18px'
-            }}>
-              ST
-            </Typography>
-            <Box sx={{
-              flex: 1,
-              height: 4,
-              backgroundColor: apoColors.bgVeryDark,
-              border: `1px solid ${apoColors.rustBorder}`,
-              borderRadius: '0',
-              position: 'relative',
-              overflow: 'hidden'
-            }}>
-              <Box sx={{
-                height: '100%',
-                width: `${Math.min((characterData.stamina / characterData.maxStamina) * 100, 100)}%`,
-                backgroundColor: theme.palette.success.main,
-                boxShadow: `0 0 4px ${theme.palette.success.main}80`,
-                transition: 'width 0.8s ease-in-out'
-              }} />
-            </Box>
-            <Typography sx={{
-              fontSize: '7px',
-              fontWeight: 'bold',
-              
-              color: apoColors.rust,
-              minWidth: '32px',
-              textAlign: 'right'
-            }}>
-              {Math.floor(characterData.stamina)}/{Math.floor(characterData.maxStamina)}
-            </Typography>
-          </Box>
-
-{/* EXP Bar */}
-<Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-  <Typography sx={{
-    fontSize: '7px',
-    fontWeight: 'bold',
-    
-    color: theme.palette.warning.main,
-    minWidth: '18px'
-  }}>
-    XP
-  </Typography>
-  <Box sx={{
-    flex: 1,
-    height: 4,
-    backgroundColor: apoColors.bgVeryDark,
-    border: `1px solid ${apoColors.rustBorder}`,
-    borderRadius: '0',
-    position: 'relative',
-    overflow: 'hidden'
-  }}>
-    <Box sx={{
-      height: '100%',
-      width: `${expPercent}%`,
-      backgroundColor: theme.palette.warning.main,
-      boxShadow: `0 0 4px ${theme.palette.warning.main}80`,
-      transition: 'width 0.8s ease-in-out'
-    }} />
-  </Box>
-  <Typography sx={{
-    fontSize: '7px',
-    fontWeight: 'bold',
-    
-    color: apoColors.rust,
-    minWidth: '22px',
-    textAlign: 'right'
-  }}>
-    {expPercent}%
-  </Typography>
-</Box>
-        </Box>
-      )}
     </Box>
 
     {/* Lista graczy online. Wcześniej wisiała jako pływający przycisk nad
@@ -1046,44 +833,7 @@ return (
             }}>
               {loadingUsername ? 'Ładowanie...' : username}
             </Typography>
-            <Typography sx={{
-              color: apoColors.textGray,
-              
-              fontWeight: 'bold',
-              fontSize: '12px',
-              textAlign: 'center',
-              textTransform: 'uppercase',
-              letterSpacing: '0.1em'
-            }}>
-              Poziom {characterData.level}
-            </Typography>
-            {/* Złoto postaci - pod poziomem, w złotym kolorze z ikonką monety */}
-            <Typography sx={{
-              color: '#e8c15a',
-              fontWeight: 'bold',
-              fontSize: '13px',
-              textAlign: 'center',
-              letterSpacing: '0.03em',
-              mt: 0.3,
-              textShadow: '1px 1px 2px rgba(0,0,0,0.9)',
-              fontVariantNumeric: 'tabular-nums',
-            }}>
-              🪙 {Number(characterData.gold || 0).toLocaleString('pl-PL')}
-            </Typography>
           </Box>
-          {!loadingCharacter && (
-            <Box>
-              <StatBar label="HP" current={characterData.hp} max={characterData.maxHp} color={theme.palette.error.main} showValues={true} />
-              <StatBar label="Stamina" current={characterData.stamina} max={characterData.maxStamina} color={theme.palette.success.main} showValues={true} />
-<StatBar
-  label="EXP"
-  current={expInCurrentLevel}
-  max={expToNextLevel}
-  color={theme.palette.warning.main}
-  icon={<StarIcon sx={{ fontSize: 12, color: theme.palette.warning.main }} />}
-/>
-            </Box>
-          )}
         </Box>
 
         {/* TRYB KARCZMY */}

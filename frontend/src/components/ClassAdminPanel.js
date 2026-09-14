@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   Box, Typography, Button, TextField, Grid, Accordion, AccordionSummary,
-  AccordionDetails, Switch, FormControlLabel, Divider, CircularProgress, Alert
+  AccordionDetails, Switch, FormControlLabel, CircularProgress, Alert
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import AddIcon from '@mui/icons-material/Add';
@@ -9,21 +9,6 @@ import SaveIcon from '@mui/icons-material/Save';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 const API = '/api';
-const STATS = ['strength', 'dexterity', 'speed', 'intelligence', 'willpower', 'endurance'];
-const STAT_LABEL = {
-  strength: 'Siła', dexterity: 'Zręczność', speed: 'Szybkość',
-  intelligence: 'Inteligencja', willpower: 'Siła woli', endurance: 'Wytrzymałość'
-};
-const BONUSES = [
-  ['bonus_attack_percent', 'Atak %'],
-  ['bonus_defense_percent', 'Obrona %'],
-  ['bonus_flee_percent', 'Ucieczka %'],
-  ['bonus_catch_percent', 'Pościg %'],
-  ['bonus_pvp_theft_percent', 'Kradzież PvP %'],
-  ['bonus_craft_quality_percent', 'Jakość craftu %'],
-  ['bonus_craft_stamina_reduction_percent', 'Redukcja staminy craftu %'],
-  ['bonus_heal_cost_reduction_percent', 'Redukcja kosztu leczenia %'],
-];
 
 function ClassAdminPanel({ onBack }) {
   const [classes, setClasses] = useState([]);
@@ -130,24 +115,6 @@ function ClassAdminPanel({ onBack }) {
                 <TextField fullWidth size="small" multiline minRows={2} label="Opis" value={cls.description || ''}
                   onChange={e => updateField(cls.id, 'description', e.target.value)} />
               </Grid>
-
-              <Grid item xs={12}><Divider><Typography variant="caption">Mnożniki AP (mnożą się z mnożnikiem rasy)</Typography></Divider></Grid>
-              {STATS.map(stat => (
-                <Grid item xs={6} sm={4} md={2} key={`mult_${stat}`}>
-                  <TextField fullWidth size="small" type="number" inputProps={{ step: 0.1 }} label={STAT_LABEL[stat]}
-                    value={cls[`mult_${stat}`] ?? 1}
-                    onChange={e => updateField(cls.id, `mult_${stat}`, Number(e.target.value))} />
-                </Grid>
-              ))}
-
-              <Grid item xs={12}><Divider><Typography variant="caption">Bonusy gameplayowe (%)</Typography></Divider></Grid>
-              {BONUSES.map(([field, label]) => (
-                <Grid item xs={6} sm={4} md={3} key={field}>
-                  <TextField fullWidth size="small" type="number" label={label}
-                    value={cls[field] ?? 0}
-                    onChange={e => updateField(cls.id, field, Number(e.target.value))} />
-                </Grid>
-              ))}
 
               <Grid item xs={12} sm={6}>
                 <TextField fullWidth size="small" type="number" label="Kolejność"

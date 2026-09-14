@@ -48,38 +48,23 @@ const COLORS = {
   gray: appColors.statusNeutral
 };
 
-// Tekst wprowadzający na kroku potwierdzenia (klimat świata Vargard).
-const originText = `Vargard — odizolowana wyspa pogrążona w mroku, gdzie niebezpieczeństwo czai się w dzikich lasach i za murami miast. Magia nie istnieje; o przetrwaniu decydują stal, spryt i wiedza. Za chwilę dołączysz do jednej z ras zamieszkujących wyspę i rozpoczniesz własną walkę o jutro. Sprawdź dane raz jeszcze — tu każdy wybór ma znaczenie, a zaufanie bywa cenniejsze niż złoto.`;
+// Tekst wprowadzający na kroku potwierdzenia. Silnik nie zna żadnego świata -
+// ten opis wpisuje administracja w panelu (game_config.creator_race_intro),
+// a poniższy tekst jest tylko zastępnikiem na czystej instalacji.
+const originText = 'Za chwilę dołączysz do świata gry i napiszesz pierwszą stronę historii swojej postaci. Sprawdź dane raz jeszcze - imię i rasa zostają na stałe, a opis możesz rozwijać w trakcie gry.';
 
-// Neutralne #151515 + tekstura - wypełnienie boxów (jak w topbarze / panelach gry).
+// Wypełnienie paneli - płaski, ciemny kamień (bez grafik).
 const stoneBg = {
   backgroundColor: '#151515',
-  backgroundImage: 'url(/ui/frames/panel-bg-neutral.png)',
-  backgroundSize: 'cover',
-  backgroundPosition: 'center',
-  backgroundRepeat: 'no-repeat',
-};
-
-// Ozdobne metalowe narożniki (PNG z /ui/frames) nakładane na rogi panelu.
-const cornerOverlay = {
-  content: '""',
-  position: 'absolute',
-  inset: '-1px',
-  pointerEvents: 'none',
-  zIndex: 2,
-  backgroundImage: `url(/ui/frames/corner-tl.png), url(/ui/frames/corner-tr.png), url(/ui/frames/corner-bl.png), url(/ui/frames/corner-br.png)`,
-  backgroundRepeat: 'no-repeat, no-repeat, no-repeat, no-repeat',
-  backgroundPosition: 'top left, top right, bottom left, bottom right',
-  backgroundSize: '74px 64px, 74px 64px, 74px 64px, 74px 64px',
 };
 
 const framedPanel = {
   ...stoneBg,
   position: 'relative',
   border: `1px solid ${COLORS.border}`,
+  borderTop: `3px solid ${COLORS.border}`,
   borderRadius: 0,
   boxShadow: '0 10px 40px rgba(0,0,0,0.72)',
-  '&::after': cornerOverlay,
 };
 
 const plainPanel = {
@@ -319,7 +304,7 @@ function CharacterCreator() {
             Wczytywanie kronik...
           </Typography>
           <Typography sx={{  color: COLORS.steelLight, opacity: 0.85 }}>
-            Otwieranie ksiąg Vargardu...
+            Otwieranie ksiąg...
           </Typography>
         </Box>
       </Box>
@@ -683,7 +668,7 @@ function CharacterCreator() {
             Kreator Postaci
           </Typography>
           <Typography sx={{ color: COLORS.steelLight,  letterSpacing: '0.08em', opacity: 0.85 }}>
-            Wykuj swoją historię na wyspie Vargard
+            Napisz pierwszą stronę historii swojej postaci
           </Typography>
         </Box>
 
@@ -790,12 +775,6 @@ function CharacterCreator() {
           </Stack>
         </Box>
 
-        {/* Footer */}
-        <Box sx={{ textAlign: 'center', mt: 5 }}>
-          <Typography sx={{ color: COLORS.steelLight,  fontStyle: 'italic', opacity: 0.7, letterSpacing: '0.05em' }}>
-            „Na Vargardzie przetrwa tylko ten, kto zna cenę zaufania."
-          </Typography>
-        </Box>
       </Container>
     </Box>
   );

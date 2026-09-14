@@ -44,7 +44,6 @@ import { loadContentWidthFromServer } from './components/contentWidth';
 import Home from './components/Home';
 import Logout from './components/Logout';
 import GlobalMessagePopup from './components/GlobalMessagePopup';
-import WeatherIllnessPopup from './components/WeatherIllnessPopup';
 import VersionChecker from './components/VersionChecker';
 import CharacterSwitchGuard from './components/CharacterSwitchGuard';
 import ProtectedRoute from './components/ProtectedRoute'
@@ -92,50 +91,22 @@ const News = lazy(() => import('./components/News'));
 const Messages = lazy(() => import('./components/Messages'));
 const ResetPassword = lazy(() => import('./components/ResetPassword'));
 const NewPassword = lazy(() => import('./components/NewPassword'));
-const Bestiary = lazy(() => import('./components/Bestiary'));
 const InfoPanel = lazy(() => import('./components/InfoPanel'));
 const InfoPanel2 = lazy(() => import('./components/InfoPanel2'));
 const AvatarComponent = lazy(() => import('./components/AvatarComponent'));
 const Regulamin = lazy(() => import('./components/Regulamin'));
-const Encyclopedia = lazy(() => import('./components/Encyclopedia'));
-const StatsCard = lazy(() => import('./components/StatsCard'));
 const RaceHall = lazy(() => import('./components/RaceHall'));
 const Rules = lazy(() => import('./components/Rules'));
-const Law = lazy(() => import('./components/Law'));
-const Mechanics = lazy(() => import('./components/Mechanics'));
-const Technology = lazy(() => import('./components/Technology'));
-const AlchemyGuide = lazy(() => import('./components/AlchemyGuide'));
 const PlayerList = lazy(() => import('./components/PlayerList'));
-const Drugs = lazy(() => import('./components/Drugs'));
 const ActivateAccount = lazy(() => import('./components/ActivateAccount'));
 const NPC = lazy(() => import('./components/Npc'));
 const CharacterLobby = lazy(() => import('./components/CharacterLobby'));
 const Reports = lazy(() => import('./components/Reports'));
 const AdminReports = lazy(() => import('./components/AdminReports'));
-const Equipment = lazy(() => import('./components/Equipment'));
-const Craft = lazy(() => import('./components/Craft'));
-const Shop = lazy(() => import('./components/Shop'));
-const BlackMarket = lazy(() => import('./components/BlackMarket'));
-const Arena = lazy(() => import('./components/Arena'));
-const Explore = lazy(() => import('./components/Explore'));
-const Work = lazy(() => import('./components/Work'));
-const Rest = lazy(() => import('./components/Rest'));
-const Hospital = lazy(() => import('./components/Hospital'));
-const Training = lazy(() => import('./components/Training'));
-const Headquarters = lazy(() => import('./components/Headquarters'));
 const CharacterNotes = lazy(() => import('./components/CharacterNotes'));
 const CharacterCardsApproval = lazy(() => import('./components/CharacterCardsApproval'));
 const Logs = lazy(() => import('./components/Logs'));
 const Cemetery = lazy(() => import('./components/Cemetery'));
-const CityHub = lazy(() => import('./components/CityHub'));
-const ResourceMarket = lazy(() => import('./components/ResourceMarket'));
-const Gather = lazy(() => import('./components/Gather'));
-const Refine = lazy(() => import('./components/Refine'));
-const Cook = lazy(() => import('./components/Cook'));
-const Bazaar = lazy(() => import('./components/Bazaar'));
-const Statues = lazy(() => import('./components/Statues'));
-const Prison = lazy(() => import('./components/Prison'));
-const Bank = lazy(() => import('./components/Bank'));
 
 const LoadingScreen = () => {
   const { effectiveMode } = useContext(ColorModeContext);
@@ -581,7 +552,6 @@ if (isAuthenticated && hasResidentMessage && residentMessageData) {
             </Fade>
 
             <GlobalMessagePopup />
-            <WeatherIllnessPopup />
             <CharacterSwitchGuard />
           </ThemeProvider>
       );
@@ -636,8 +606,6 @@ if (isAuthenticated && hasResidentMessage && residentMessageData) {
     <Route path="/register" element={<Register />} />
     <Route path="/regulamin" element={<Regulamin />} />
     {/* Encyklopedia świata - publiczna, dostępna przed zalogowaniem */}
-    <Route path="/encyklopedia" element={<Encyclopedia />} />
-    <Route path="/lore" element={<Navigate to="/encyklopedia" replace />} />
     <Route path="/activate/:token" element={<ActivateAccount />} />
     <Route path="/lobby" element={<CharacterLobby />} />
     <Route path="/resetpassword" element={<ResetPassword />} />
@@ -654,26 +622,6 @@ if (isAuthenticated && hasResidentMessage && residentMessageData) {
     >
       <Route index element={<News />} />
       <Route path="profile/:id" element={<ProfileRoute />} />
-      <Route path="equipment" element={<Equipment />} />
-      <Route path="city" element={<CityHub />} />
-      <Route path="craft" element={<Craft />} />
-      <Route path="shop" element={<Shop />} />
-      <Route path="market" element={<ResourceMarket />} />
-      <Route path="gather" element={<Gather />} />
-      <Route path="refine" element={<Refine />} />
-      <Route path="cook" element={<Cook />} />
-      <Route path="bazaar" element={<Bazaar />} />
-      <Route path="blackmarket" element={<BlackMarket />} />
-      <Route path="arena" element={<Arena />} />
-      <Route path="explore" element={<Explore />} />
-      <Route path="work" element={<Work />} />
-      <Route path="rest" element={<Rest />} />
-      <Route path="hospital" element={<Hospital />} />
-      <Route path="training" element={<Training />} />
-      <Route path="statues" element={<Statues />} />
-      <Route path="prison" element={<Prison />} />
-      <Route path="bank" element={<Bank />} />
-      <Route path="headquarters" element={<Headquarters />} />
       <Route path="generalSessions" element={<GeneralSessions />} />
       <Route path="generalSessions/new" element={<GeneralSessions />} />
       <Route path="generalSessions/:sessionId" element={<GeneralSessions />} />
@@ -705,19 +653,10 @@ if (isAuthenticated && hasResidentMessage && residentMessageData) {
         }
       />
       <Route path="tavern" element={<Tavern />} />
-      <Route path="bestiary" element={<Bestiary />} />
-      <Route path="statscard" element={<StatsCard />} />
       <Route path=":raceKey" element={<RaceHall />} />
       <Route path="rules" element={<Rules />} />
-      <Route path="technology" element={<Technology />} />
-      <Route path="alchemy-guide" element={<AlchemyGuide />} />
       <Route path="players" element={<PlayerList />} />
-      <Route path="history" element={<Drugs />} />
-      {/* Stary route /home/drugs -> /home/history (zachowuje stare linki/zakładki) */}
-      <Route path="drugs" element={<Navigate to="/home/history" replace />} />
       <Route path="npc" element={<NPC />} />
-      <Route path="mechanics" element={<Mechanics />} />
-      <Route path="law" element={<Law />} />
       <Route path="infopanel" element={<InfoPanel />} />
       <Route path="infopanel2" element={<InfoPanel2 />} />
       <Route path="avatarcomponent" element={<AvatarComponent />} />
@@ -752,7 +691,6 @@ if (isAuthenticated && hasResidentMessage && residentMessageData) {
 
 
         <GlobalMessagePopup />
-        <WeatherIllnessPopup />
         {/* Ostrzeżenie, gdy w innej karcie wybrano inną postać */}
         <CharacterSwitchGuard />
       </ThemeProvider>

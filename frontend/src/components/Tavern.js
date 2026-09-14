@@ -53,14 +53,6 @@ import SendIcon from '@mui/icons-material/Send';
 import { Person, Close, Room, Casino as CasinoIcon, People as PeopleIcon, RemoveCircle as KickIcon, Edit as EditNoteTwoToneIcon } from '@mui/icons-material';
 import { decodeJwtPayload, getUserRole, getCurrentCharacter } from './AuthContext';
 
-// Wariant grafiki dividera (rozdzielacz postów) wg rasy biezacej postaci.
-const currentDividerFrame = () => {
-  const cc = getCurrentCharacter();
-  const s = `${cc?.characterFaction || ''} ${cc?.characterRace || ''}`.toLowerCase();
-  if (/wampir|vampire|vamp/.test(s)) return 'vampire';
-  if (/wilko|wilk|wolf|lykan|lycan/.test(s)) return 'wolf';
-  return 'human';
-};
 import CharacterCardPopup from './CharacterCardPopup';
 import useResponsive from './useResponsive';
 
@@ -2404,10 +2396,7 @@ const Tavern = () => {
                 display: 'block',
                 height: { xs: '10px', sm: '18px' },
                 mt: { xs: 0.5, sm: 0.75 },
-                backgroundImage: `url(/ui/dividers/bottom-${currentDividerFrame()}.png)`,
-                backgroundRepeat: 'no-repeat',
-                backgroundPosition: 'center',
-                backgroundSize: '100% 100%',
+                background: `linear-gradient(90deg, transparent, ${theme.palette.divider}, transparent)`,
               },
             }}>
               {/* Panel postu - tło na całym polu między przedziałkami (razem z avatarem) */}

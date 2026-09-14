@@ -44,15 +44,6 @@ import useResponsive from './useResponsive';
 
 const API_BASE = "/api";
 
-// Wariant ozdobnej ramki rasowej (/ui/session/{frame}.png) rozpoznawany po
-// nazwie/kluczu rasy - ta sama logika co useRaceColor (human|wolf|vampire).
-const frameFromRace = (name, key) => {
-  const nm = `${name || ''} ${key || ''}`.toLowerCase();
-  if (/wampir|vampire|vamp/.test(nm)) return 'vampire';
-  if (/wilko|wilk|wolf|lykan|lycan/.test(nm)) return 'wolf';
-  return 'human';
-};
-
 const getToastStyle = (theme) => ({
     style: {
         background: theme.palette.background.paper,
@@ -110,7 +101,6 @@ const CharacterCard3D = ({
         const r = races.find(rr => rr.key === key);
         return getRaceColorSet(r?.color, { name: r?.name, key });
     };
-    const raceFrame = frameFromRace(getRaceName(character?.faction), character?.faction);
 
     // Limit resetów: 1 na 7 dni na DANE ID POSTACI (backend:
     // utils/characterReset.js). Przycisk jest wygaszony, żeby gracz nie
@@ -169,10 +159,9 @@ const CharacterCard3D = ({
                     width: { xs: 300, sm: 400, md: 500 },
                     height: { xs: 450, sm: 550, md: 650 },
                     bgcolor: `${appColors.bgDeep}cc`,
-                    // Ozdobna ramka rasowa (border-image) - jak w /privateSessions.
-                    borderStyle: 'solid',
-                    borderWidth: { xs: '18px 22px', md: '18px 22px' },
-                    borderImage: `url(/ui/session/${raceFrame}.png) 56 62 stretch`,
+                    // Obwódka w kolorze rasy - bez grafik.
+                    border: `1px solid ${getRaceColor(character?.faction).border}`,
+                    borderTop: `3px solid ${getRaceColor(character?.faction).accent}`,
                     backgroundClip: 'padding-box',
                     overflow: 'hidden',
                     transition: 'all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
@@ -272,10 +261,9 @@ const CharacterCard3D = ({
                 // zawijały się do 2 linii i "WCIEL SIĘ" wypadał poza kartę).
                 display: 'flex',
                 flexDirection: 'column',
-                // Ozdobna ramka rasowa (border-image) - jak w /privateSessions.
-                borderStyle: 'solid',
-                borderWidth: { xs: '18px 22px', md: '18px 22px' },
-                borderImage: `url(/ui/session/${raceFrame}.png) 56 62 stretch`,
+                // Obwódka w kolorze rasy - bez grafik.
+                border: `1px solid ${getRaceColor(character?.faction).border}`,
+                borderTop: `3px solid ${getRaceColor(character?.faction).accent}`,
                 backgroundClip: 'padding-box',
                 overflow: 'hidden',
                 cursor: isCenter ? 'pointer' : 'default',

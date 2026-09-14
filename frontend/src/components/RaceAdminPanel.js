@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   Box, Paper, Typography, Button, TextField, Grid, Accordion, AccordionSummary,
-  AccordionDetails, Switch, FormControlLabel, Divider, CircularProgress, Alert
+  AccordionDetails, Switch, FormControlLabel, CircularProgress, Alert
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import AddIcon from '@mui/icons-material/Add';
@@ -9,11 +9,6 @@ import SaveIcon from '@mui/icons-material/Save';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 const API = '/api';
-const STATS = ['strength', 'dexterity', 'speed', 'intelligence', 'willpower', 'endurance'];
-const STAT_LABEL = {
-  strength: 'Siła', dexterity: 'Zręczność', speed: 'Szybkość',
-  intelligence: 'Inteligencja', willpower: 'Siła woli', endurance: 'Wytrzymałość'
-};
 
 function RaceAdminPanel({ onBack }) {
   const [races, setRaces] = useState([]);
@@ -185,35 +180,6 @@ function RaceAdminPanel({ onBack }) {
                   onChange={e => updateField(race.id, 'traits', e.target.value)} />
               </Grid>
 
-              <Grid item xs={12}><Divider><Typography variant="caption">Statystyki startowe</Typography></Divider></Grid>
-              {STATS.map(stat => (
-                <Grid item xs={6} sm={4} md={2} key={`base_${stat}`}>
-                  <TextField fullWidth size="small" type="number" label={STAT_LABEL[stat]}
-                    value={race[`base_${stat}`] ?? 5}
-                    onChange={e => updateField(race.id, `base_${stat}`, Number(e.target.value))} />
-                </Grid>
-              ))}
-
-              <Grid item xs={12}><Divider><Typography variant="caption">Mnożniki AP (specjalność rasy)</Typography></Divider></Grid>
-              {STATS.map(stat => (
-                <Grid item xs={6} sm={4} md={2} key={`mult_${stat}`}>
-                  <TextField fullWidth size="small" type="number" inputProps={{ step: 0.1 }} label={STAT_LABEL[stat]}
-                    value={race[`mult_${stat}`] ?? 1}
-                    onChange={e => updateField(race.id, `mult_${stat}`, Number(e.target.value))} />
-                </Grid>
-              ))}
-
-              <Grid item xs={12}><Divider><Typography variant="caption">Modyfikator walki wg pory doby (%)</Typography></Divider></Grid>
-              <Grid item xs={6} sm={3}>
-                <TextField fullWidth size="small" type="number" label="Dzień (%)"
-                  value={race.combat_day_percent ?? 0}
-                  onChange={e => updateField(race.id, 'combat_day_percent', Number(e.target.value))} />
-              </Grid>
-              <Grid item xs={6} sm={3}>
-                <TextField fullWidth size="small" type="number" label="Noc (%)"
-                  value={race.combat_night_percent ?? 0}
-                  onChange={e => updateField(race.id, 'combat_night_percent', Number(e.target.value))} />
-              </Grid>
               <Grid item xs={12} sm={3}>
                 <TextField fullWidth size="small" type="number" label="Kolejność"
                   value={race.sort_order ?? 0}

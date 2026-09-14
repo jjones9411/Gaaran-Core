@@ -93,10 +93,9 @@ import { TextStyle } from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
 import Highlight from '@tiptap/extension-highlight';
 import Image from '@tiptap/extension-image';
-import { getPlayStyle } from './playStyle';
 import useRaceColor from './useRaceColor';
 import RaceDivider from './RaceDivider';
-import { appColors, getRaceColorSet, frameTintFilter } from './theme';
+import { appColors, getRaceColorSet } from './theme';
 
 // ==============================
 // STAŁE
@@ -358,43 +357,27 @@ function Profile() {
   const isMobile = useMediaQuery('(max-width:600px)');
   const race = useRaceColor(); // kolor/ramka wg rasy granej postaci (przyciski nawigacji)
 
-  // Grafiki przycisków przeskoku między profilami (normal + hover) wg rasy.
-  // Nakładamy tekst na pustą grafikę; hover przełącza tło na wariant podświetlony.
-  const navBtnFrame = race.frame || 'human';
+  // Przyciski przeskoku między profilami - obwódka w kolorze rasy, bez grafik.
   const navBtnSx = {
-    position: 'relative',
-    isolation: 'isolate',
     width: { xs: 150, sm: 190 },
     height: { xs: 46, sm: 58 },
     minWidth: 0,
     p: 0,
-    border: 'none',
     borderRadius: 0,
-    background: 'transparent',
+    border: `1px solid ${race.border}`,
+    borderLeft: `3px solid ${race.accent}`,
+    backgroundColor: 'rgba(0,0,0,0.35)',
     color: race.accent,
-
     fontWeight: 'bold',
     fontSize: { xs: '0.8rem', sm: '0.95rem' },
     textTransform: 'uppercase',
     letterSpacing: '0.06em',
-    textShadow: '1px 1px 3px rgba(0,0,0,0.9)',
     lineHeight: 1,
     flexShrink: 0,
-    transition: 'transform 0.15s ease',
-    // Ramka przycisku (PNG) na ::before z tintem rasowym - filtr NIE dotyka tekstu.
-    '&::before': {
-      content: '""',
-      position: 'absolute',
-      inset: 0,
-      zIndex: -1,
-      background: `url(/ui/buttons/nav-${navBtnFrame}-normal.png) center/100% 100% no-repeat`,
-      filter: frameTintFilter(navBtnFrame),
-    },
-    '&:hover::before': {
-      background: `url(/ui/buttons/nav-${navBtnFrame}-hover.png) center/100% 100% no-repeat`,
-      filter: frameTintFilter(navBtnFrame),
-    },
+    transition: 'transform 0.15s ease, background-color 0.15s ease',
     '&:hover': {
+      backgroundColor: race.soft,
+      borderColor: race.accent,
       color: race.accent,
       transform: 'translateY(-2px)',
     },
@@ -421,14 +404,6 @@ function Profile() {
     confirmText: 'Usuń',
     confirmColor: 'error',
   });
-
-  // ===== KRADZIEŻ KIESZONKOWA =====
-  // `theftStatus` przychodzi z GET /theft/:id/status i mówi tylko, CZY próba jest
-  // możliwa (+ powód odmowy). Świadomie bez procentowej szansy - cel ocenia się
-  // po statystykach widocznych w jego profilu, a nie po gotowej liczbie.
-  const [theftStatus, setTheftStatus] = useState(null);
-  const [theftBusy, setTheftBusy] = useState(false);
-  const [theftResult, setTheftResult] = useState(null);
 
   const [ownerCharactersDialog, setOwnerCharactersDialog] = useState(false);
   const [ownerCharacters, setOwnerCharacters] = useState([]);
@@ -965,88 +940,6 @@ useEffect(() => {
       console.error('Błąd pobierania postaci gracza:', error);
     } finally {
       setLoadingOwnerCharacters(false);
-    }
-  };
-
-  // ===== KRADZIEŻ KIESZONKOWA - akcje =====
-
-  // Czy w ogóle pokazywać przycisk. Kradzież to zabawa mechaniczna, więc znika
-  // dla postaci grających wyłącznie fabularnie - po obu stronach. Ostateczną
-  // decyzję i tak podejmuje serwer (routes/theft.js), tu chodzi o to, żeby
-  // przycisk nie kusił tam, gdzie nie ma czego szukać.
-  const canAttemptTheft = () => {
-    if (!user?.characterId || !characterData || isDeleted) return false;
-    if (String(characterData.id) === String(user.characterId)) return false;
-    const targetStyle = safeGet(characterData, 'playStyle', 'oba');
-    return targetStyle !== 'fabularnie';
-  };
-
-  const isTargetImprisoned = () => Boolean(safeGet(characterData, 'jailedUntil', null));
-
-  useEffect(() => {
-    if (!canAttemptTheft()) {
-      setTheftStatus(null);
-      return;
-    }
-    let alive = true;
-    const token = localStorage.getItem('token');
-    fetch(`/api/theft/${characterData.id}/status?characterId=${user.characterId}`, {
-      headers: { 'Authorization': `Bearer ${token}` },
-    })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (alive) setTheftStatus(d); })
-      .catch(() => { if (alive) setTheftStatus(null); });
-    return () => { alive = false; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [characterData?.id, characterData?.playStyle, user?.characterId, isDeleted]);
-
-  const refreshTheftStatus = async (token) => {
-    try {
-      const r = await fetch(`/api/theft/${characterData.id}/status?characterId=${user.characterId}`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-      if (r.ok) setTheftStatus(await r.json());
-    } catch {
-      // Sam status to tylko podpowiedź w dymku - jak nie dojdzie, przycisk
-      // zostanie zablokowany i tak przez serwer przy próbie.
-    }
-  };
-
-  const handleTheft = async () => {
-    if (theftBusy) return;
-    setTheftBusy(true);
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/theft', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ characterId: user.characterId, targetId: characterData.id }),
-      });
-      const data = await response.json();
-
-      if (!response.ok) {
-        toast.error(data.error || data.message || 'Próba się nie powiodła');
-        return;
-      }
-
-      setTheftResult(data);
-
-      // Po skoku stan obu stron się zmienił (złoto, stamina, ewentualna krata),
-      // więc odświeżamy profil. Status kradzieży też - żeby dymek pokazał realną
-      // godzinę kolejnej próby z dobowego limitu, a nie zgadywany tekst.
-      const refreshed = await fetch(`/api/home/profile/${id}`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-      if (refreshed.ok) {
-        const fresh = await refreshed.json();
-        setCharacterData((prev) => (prev ? { ...prev, ...fresh.profileData } : prev));
-      }
-      await refreshTheftStatus(token);
-    } catch (e) {
-      console.error('Błąd próby kradzieży:', e);
-      toast.error('Błąd połączenia przy próbie kradzieży');
-    } finally {
-      setTheftBusy(false);
     }
   };
 
@@ -2244,7 +2137,6 @@ useEffect(() => {
             status: safeGet(data.profileData, 'status', ''),
             narrativeRole: safeGet(data.profileData, 'narrativeRole', ''),
             epithet: safeGet(data.profileData, 'epithet', ''),
-            playStyle: safeGet(data.profileData, 'playStyle', 'oba'),
             youtube_music_url: safeGet(data.profileData, 'youtube_music_url', ''),
             approved: Boolean(safeGet(data.profileData, 'approved', false)),
             user_id: safeGet(data.profileData, 'user_id', null),  // KLUCZOWE
@@ -2568,7 +2460,7 @@ return (
 
   {/* IMIĘ POSTACI - ozdobne linie rasowe: górna z symbolem (top), dolna bez (bottom) */}
   <Box sx={{ flexGrow: 1, textAlign: 'center', px: 2 }}>
-    <RaceDivider variant="top" frame={navBtnFrame} />
+    <RaceDivider variant="top" />
     <Typography sx={{
       
       color: theme.palette.primary.main,
@@ -2580,7 +2472,7 @@ return (
     }}>
       {safeGet(characterData, 'name', 'NIEZNANA POSTAĆ')}
     </Typography>
-    <RaceDivider variant="bottom" frame={navBtnFrame} />
+    <RaceDivider variant="bottom" />
   </Box>
 
   <Button disableRipple sx={navBtnSx} onClick={() => goToProfile(1)}>
@@ -2741,58 +2633,6 @@ return (
       </Box>
     )}
 
-    {/* KRATY - postać odsiadująca wyrok (characters.jailed_until). Rysowane
-        gradientem na wierzchu avatara, bez dokładania grafik do repo. */}
-    {isTargetImprisoned() && (
-      <>
-        <Box
-          sx={{
-            position: 'absolute',
-            inset: 0,
-            pointerEvents: 'none',
-            background: `
-              linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)),
-              repeating-linear-gradient(
-                90deg,
-                rgba(12,12,12,0.92) 0px,
-                rgba(12,12,12,0.92) 10px,
-                transparent 10px,
-                transparent 46px
-              )
-            `,
-          }}
-        />
-        <Box
-          sx={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            py: 1,
-            textAlign: 'center',
-            backgroundColor: 'rgba(0,0,0,0.8)',
-            borderTop: `2px solid ${theme.palette.error.main}`,
-            pointerEvents: 'none',
-          }}
-        >
-          <Typography sx={{
-            color: theme.palette.error.text,
-            fontWeight: 'bold',
-            textTransform: 'uppercase',
-            letterSpacing: '0.12em',
-            fontSize: '0.85rem',
-          }}>
-            Za kratami
-          </Typography>
-          <Typography sx={{ color: theme.palette.common.white, fontSize: '0.72rem' }}>
-            do {new Date(safeGet(characterData, 'jailedUntil', null)).toLocaleString('pl-PL', {
-              day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
-            })}
-          </Typography>
-        </Box>
-      </>
-    )}
-
 {canChangeAvatar() && (
   <Box sx={{ position: 'absolute', bottom: 16, right: 16 }}>
     <Tooltip title="Max 200KB" placement="top">
@@ -2891,11 +2731,6 @@ return (
         )}
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', columnGap: 1.5, rowGap: 1.25 }}>
           <Field label="ID"><span>#{id}</span></Field>
-          <Field label="Styl gry">
-            <Box component="span" sx={{ color: getPlayStyle(safeGet(characterData, 'playStyle', 'oba')).color, fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {getPlayStyle(safeGet(characterData, 'playStyle', 'oba')).short}
-            </Box>
-          </Field>
           <Field label="Karta postaci">
             <PlainTag
               color={readableTagColor(theme, characterCardData.isApproved ? theme.palette.success.main : theme.palette.error.main)}
@@ -3523,90 +3358,9 @@ return (
         Wyślij wiadomość
       </Button>
     )}
-
-    {/* OKRADNIJ - kradzież kieszonkowa. Przycisk zostaje widoczny także wtedy,
-        gdy próba jest niemożliwa: wyszarzony, z powodem w dymku, żeby gracz
-        wiedział DLACZEGO nie może (chata, cooldown, styl gry, cela). */}
-    {canAttemptTheft() && (
-      <Tooltip
-        title={
-          theftStatus?.available
-            ? `Jedna próba na dobę. Koszt ${theftStatus.staminaCost} staminy. `
-              + `Udany skok to 10% sakiewki, wpadka — ${theftStatus.jailHours}h w celi.`
-            : (theftStatus?.reason || 'Sprawdzanie...')
-        }
-        placement="top"
-      >
-        {/* span, bo Tooltip nie pokazuje dymka nad disabled buttonem */}
-        <span style={{ alignSelf: 'flex-start' }}>
-          <Button
-            variant="outlined"
-            disabled={!theftStatus?.available || theftBusy}
-            onClick={handleTheft}
-            sx={{
-              px: 2,
-              py: 0.75,
-              borderRadius: 0,
-              fontSize: '0.85rem',
-              fontWeight: 'bold',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-              color: theme.palette.warning.main,
-              borderColor: `${theme.palette.warning.main}88`,
-              borderWidth: 2,
-              '&:hover': {
-                borderColor: theme.palette.warning.main,
-                backgroundColor: `${theme.palette.warning.main}14`,
-                borderWidth: 2,
-              },
-              '&:disabled': {
-                color: theme.palette.text.disabled,
-                borderColor: theme.palette.divider,
-                borderWidth: 2,
-              },
-            }}
-          >
-            {theftBusy ? 'Podchodzisz...' : 'Okradnij'}
-          </Button>
-        </span>
-      </Tooltip>
-    )}
   </Box>
 </Box>
 
-{/* WYNIK KRADZIEŻY */}
-<Dialog
-  open={Boolean(theftResult)}
-  onClose={() => setTheftResult(null)}
-  maxWidth="xs"
-  fullWidth
-  PaperProps={{ sx: { borderRadius: 0, border: `2px solid ${race.hex}` } }}
->
-  <DialogTitle sx={{ textTransform: 'uppercase', letterSpacing: '0.08em', color: race.accent }}>
-    {theftResult?.success ? 'Czysta robota' : theftResult?.caught ? 'Wpadka' : 'Nie wyszło'}
-  </DialogTitle>
-  <DialogContent>
-    <Typography sx={{ color: theme.palette.text.primary, mb: 1 }}>
-      {theftResult?.message}
-    </Typography>
-    {theftResult?.success && (
-      <Typography sx={{ color: theme.palette.success.text, fontWeight: 'bold' }}>
-        +{new Intl.NumberFormat('pl-PL').format(theftResult.goldStolen)} złota
-      </Typography>
-    )}
-    {theftResult?.caught && (
-      <Typography sx={{ color: theme.palette.error.text, fontWeight: 'bold' }}>
-        Wolność do odwołania. Zza krat nie zadziałasz mechanicznie i nie odzyskasz HP ani staminy —
-        chyba że ktoś wpłaci za Ciebie kaucję.
-      </Typography>
-    )}
-  </DialogContent>
-  <DialogActions>
-    <Button onClick={() => setTheftResult(null)} sx={{ borderRadius: 0, color: race.accent }}>
-      Zamknij
-    </Button>
-  </DialogActions>
-</Dialog>
 {/* CHARACTER CONTENT TABS */}
 <Tabs 
   value={activeContentTab} 

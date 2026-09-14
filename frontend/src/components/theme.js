@@ -984,76 +984,11 @@ const DEFAULT_RACE_COLOR_HEX = '#8a6628';
 // rasa różni się TONEM ŚRODKOWYM (strong) i AKCENTEM (hover = operacyjny kolor
 // rasy: nagłówki, obwódki, poświaty). `light` to jasny odcień akcentu - czytelny
 // TEKST/etykiety na ciemnym tle.
-export const RACE_PALETTES = {
-  // Człowiek: stonowane, ciemne złoto (bez jaskrawej żółci). Bordo -> brąz #492f1b
-  // (mid/dividery) -> ciemne złoto #63571D (akcent) -> jasne złoto na tekst.
-  human:   { primary: '#211414', strong: '#492f1b', hover: '#63571D', light: '#D8D389' },
-  // Wilkołak: głęboka, przygaszona leśna zieleń (bez neonu). Bordo -> brąz #2b200c
-  // -> ciemna zieleń #1c321a (akcent) -> jasna szałwia na tekst.
-  wolf:    { primary: '#211414', strong: '#2b200c', hover: '#1c321a', light: '#B4C9AD' },
-  // Wampir: srebro/grafit. Bordo -> ciemny grafit #5a5252 -> srebro #999999
-  // (akcent) -> jasne srebro na tekst.
-  vampire: { primary: '#211414', strong: '#5a5252', hover: '#999999', light: '#D9D6D6' },
-};
-
-// Filtr CSS tintujący brązowo-złote ramki PNG (narożniki + belki) w kierunku
-// koloru danej rasy. Ramki to statyczne grafiki (brąz), więc zamiast nowych
-// plików przebarwiamy je filtrem - do dostrojenia wizualnego.
-//   human   -> złota żółć (#999529)
-//   wolf    -> leśna zieleń (#344931)
-//   vampire -> srebro/grafit (#797777)
-export function frameTintFilter(frameKey) {
-  switch (frameKey) {
-    case 'wolf':    return 'sepia(0.5) hue-rotate(55deg) saturate(0.6) brightness(0.72)';
-    case 'vampire': return 'grayscale(1) brightness(0.95) contrast(1.0)';
-    case 'human':
-    default:        return 'sepia(0.55) hue-rotate(0deg) saturate(0.85) brightness(0.78)';
-  }
-}
-
-// Rozpoznaje rasę kanoniczną po nazwie/kluczu (jak frameFromRace w komponentach).
-// Zwraca null dla ras spoza trójki human/wolf/vampire - wtedy kolor bierzemy z
-// bazy (races.color) i wyliczamy z niego zestaw, zachowując wsparcie dla ras
-// dodanych przez admina.
-export function raceFrameKey(name, key) {
-  const nm = `${name || ''} ${key || ''}`.toLowerCase();
-  if (/wampir|vampire|vamp/.test(nm)) return 'vampire';
-  if (/wilko|wilk|wolf|lykan|lycan/.test(nm)) return 'wolf';
-  if (/człowiek|czlowiek|human|ludz/.test(nm)) return 'human';
-  return null;
-}
-
-// getRaceColorSet(hex, meta?) - gdy meta ({name, key}) wskazuje rasę kanoniczną,
-// używamy jej kuratorowanej palety; w przeciwnym razie wyliczamy zestaw z `hex`
-// (kolor rasy z panelu admina).
+// getRaceColorSet(hex) - wylicza komplet odcieni z koloru rasy ustawionego w
+// panelu administracyjnym (races.color). Silnik nie zna żadnej rasy z góry,
+// więc nie ma tu list nazw ani gotowych palet - wszystko idzie z bazy.
+// Drugi argument (meta) jest przyjmowany dla zgodności wywołań i ignorowany.
 export function getRaceColorSet(hex, meta = null) {
-  const frame = meta ? raceFrameKey(meta.name, meta.key) : null;
-  const pal = frame ? RACE_PALETTES[frame] : null;
-  if (pal) {
-    // `primary` = Hover (przygaszony, "brudny" ale WIDOCZNY na ciemnym tle) - tym
-    // odcieniem posługuje się większość kodu jako operacyjnym kolorem rasy (nagłówki,
-    // obwódki, drobne wypełnienia). Nie jest ani neonowy, ani tak ciemny jak Główny,
-    // więc etykiety pozostają czytelne, a całość jest stonowana. Najczytelniejszy
-    // tekst to `accent` (Jasny tekst), mocniejsze wypełnienia to `strong` (Akcent),
-    // a najgłębszy ton to `deep` (Główny).
-    const h = hexToRgb(pal.hover);
-    return {
-      primary: pal.hover,     // operacyjny kolor rasy - przygaszony, widoczny
-      accent: pal.light,      // najczytelniejszy tekst/etykiety na ciemnym tle
-      strong: pal.strong,     // Akcent - mocniejsze obwódki/wypełnienia
-      hover: pal.hover,       // hover / poświata ramki tła
-      deep: pal.primary,      // Główny - najciemniejszy, do głębokich wypełnień/bazy
-      // Kolor POŚWIATY (glow) wokół ozdobnych ramek PNG. Zwykle = strong (kolor
-      // rasy), ale wampir dostaje osobne, głębokie bordo - srebrne kolory rasy
-      // (strong/hover/light) zostają bez zmian, zmienia się TYLKO glow ramek.
-      frameGlow: frame === 'vampire' ? '#341313' : pal.strong,
-      light: `rgba(${h.r}, ${h.g}, ${h.b}, 0.15)`,
-      soft: `rgba(${h.r}, ${h.g}, ${h.b}, 0.10)`,
-      border: `rgba(${h.r}, ${h.g}, ${h.b}, 0.50)`,
-      contrastText: '#0d0d0d',
-    };
-  }
-
   const rgb = hexToRgb(hex) || hexToRgb(DEFAULT_RACE_COLOR_HEX);
   const primary = hexToRgb(hex) ? hex : DEFAULT_RACE_COLOR_HEX;
   // `accent` to `primary` rozjasniony do minimalnego kontrastu WCAG na aktualnym
@@ -1433,11 +1368,9 @@ export const readingSurfaceSx = (theme) => {
     backgroundImage: {
       xs: 'none',
       sm: isDark
-        ? 'url(/ui/frames/panel-bg-neutral.png)'
+        ? 'none'
         : 'linear-gradient(180deg, rgba(255,252,244,0.7) 0%, rgba(228,216,190,0.7) 100%)',
     },
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
     backgroundRepeat: 'no-repeat',
     boxShadow: {
       xs: 'none',
@@ -1537,55 +1470,18 @@ export const authGoldLight = '#D8D389';
 // Technika stackingu: isolation:isolate + ::before z-index:-1 => treść panelu
 // jest nad teksturą BEZ konieczności ustawiania z-index na każdej stronie.
 // UWAGA: panel NIE może mieć overflow:hidden - przycięłoby ramkę (::after).
-const AUTH_FRAME_T = 18;   // grubość belki ramki (desktop; jak FRAME_TH/TV w Home)
-const AUTH_CORNER_W = 93;  // szerokość ozdobnego narożnika (desktop)
-const AUTH_CORNER_H = 80;  // wysokość narożnika (proporcja grafiki)
-// Mobile: mniejsza ramka - narożniki 135px rozwalały wąski ekran (zła skala).
-const AUTH_FRAME_T_XS = 10;
-const AUTH_CORNER_W_XS = 51;
-const AUTH_CORNER_H_XS = 44;
-const authCornerSize = (cw, ch, t) =>
-  `${cw}px ${ch}px, ${cw}px ${ch}px, ${cw}px ${ch}px, ${cw}px ${ch}px, ${t}px 100%, ${t}px 100%, 100% ${t}px, 100% ${t}px`;
+// Panel ekranów przed grą (logowanie, rejestracja, reset hasła): ciemne tło,
+// ostre krawędzie i obwódka w kolorze akcentu - bez grafik.
+// Użycie: sx={{ ...authPanelSx, p: 3 }}.
 export const authPanelSx = {
   boxSizing: 'border-box',
   position: 'relative',
-  isolation: 'isolate',
   borderRadius: 0,
-  border: {
-    xs: `${AUTH_FRAME_T_XS}px solid transparent`,
-    sm: `${AUTH_FRAME_T}px solid transparent`,
-  },
-  backgroundColor: 'transparent',
+  backgroundColor: '#151515',
+  backgroundImage: 'radial-gradient(ellipse at 50% 0%, rgba(99,87,29,0.10) 0%, transparent 60%)',
+  border: `1px solid ${appColors.rustBorder}`,
+  borderTop: `3px solid ${appColors.rust}`,
   boxShadow: '0 20px 50px rgba(0,0,0,0.9)',
-  // Ciemne bordo + kamienna tekstura wewnątrz ramki (padding-box).
-  '&::before': {
-    content: '""',
-    position: 'absolute', inset: 0, zIndex: -1, pointerEvents: 'none',
-    backgroundColor: '#151515',
-    backgroundImage: `radial-gradient(ellipse at 50% 0%, rgba(99,87,29,0.10) 0%, transparent 60%), url(/ui/frames/panel-bg-neutral.png)`,
-    backgroundSize: 'cover, cover',
-    backgroundPosition: 'center, center',
-    backgroundRepeat: 'no-repeat, no-repeat',
-  },
-  // Ozdobna ramka na pasie borderu: 4 narożniki -> belki pionowe -> poziome.
-  '&::after': {
-    content: '""',
-    position: 'absolute',
-    top: { xs: `-${AUTH_FRAME_T_XS}px`, sm: `-${AUTH_FRAME_T}px` },
-    bottom: { xs: `-${AUTH_FRAME_T_XS}px`, sm: `-${AUTH_FRAME_T}px` },
-    left: { xs: `-${AUTH_FRAME_T_XS}px`, sm: `-${AUTH_FRAME_T}px` },
-    right: { xs: `-${AUTH_FRAME_T_XS}px`, sm: `-${AUTH_FRAME_T}px` },
-    pointerEvents: 'none', zIndex: 2,
-    // Tint człowieka + subtelna poświata w kolorze środkowym człowieka (#492f1b).
-    filter: `${frameTintFilter('human')} drop-shadow(0 0 5px #492f1b) drop-shadow(0 0 13px #492f1b)`,
-    backgroundImage: `url(/ui/frames/corner-tl.png), url(/ui/frames/corner-tr.png), url(/ui/frames/corner-bl.png), url(/ui/frames/corner-br.png), url(/ui/frames/human-v.png), url(/ui/frames/human-v.png), url(/ui/frames/human-h.png), url(/ui/frames/human-h.png)`,
-    backgroundRepeat: 'no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat',
-    backgroundPosition: 'top left, top right, bottom left, bottom right, left center, right center, top center, bottom center',
-    backgroundSize: {
-      xs: authCornerSize(AUTH_CORNER_W_XS, AUTH_CORNER_H_XS, AUTH_FRAME_T_XS),
-      sm: authCornerSize(AUTH_CORNER_W, AUTH_CORNER_H, AUTH_FRAME_T),
-    },
-  },
 };
 
 // Wysokokontrastowe pole tekstowe dla ekranów przed grą.

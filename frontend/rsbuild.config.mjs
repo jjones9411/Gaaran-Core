@@ -60,7 +60,6 @@ export default defineConfig(async () => {
       // ustawiany w App.js jest dla nich niewidoczny.
       title: siteMeta.gameName,
       meta: buildMetaTags(siteMeta),
-      favicon: './public/favicon.png'
     },
     server: {
       proxy: {
@@ -68,18 +67,6 @@ export default defineConfig(async () => {
           target: 'http://localhost:5000',
           changeOrigin: true,
           pathRewrite: { '^/api': '' },
-        },
-        '/vampires': {
-          target: 'http://localhost:5000',
-          changeOrigin: true,
-        },
-        '/werewolves': {
-          target: 'http://localhost:5000',
-          changeOrigin: true,
-        },
-        '/mag': {
-          target: 'http://localhost:5000',
-          changeOrigin: true,
         },
         '/infos': {
           target: 'http://localhost:5000',
@@ -89,27 +76,7 @@ export default defineConfig(async () => {
           target: 'http://localhost:5000',
           changeOrigin: true,
         },
-        '/bestiary': {
-          target: 'http://localhost:5000',
-          changeOrigin: true,
-        },
         '/npc': {
-          target: 'http://localhost:5000',
-          changeOrigin: true,
-        },
-        '/drugs': {
-          target: 'http://localhost:5000',
-          changeOrigin: true,
-        },
-        '/technology': {
-          target: 'http://localhost:5000',
-          changeOrigin: true,
-        },
-        '/mechanics': {
-          target: 'http://localhost:5000',
-          changeOrigin: true,
-        },
-        '/law': {
           target: 'http://localhost:5000',
           changeOrigin: true,
         },

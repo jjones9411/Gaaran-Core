@@ -233,7 +233,6 @@ function Messages() {
   const [searchParams] = useSearchParams();
   const theme = useTheme();
   const race = useRaceColor(); // ramka/tinta/hover/divider wg rasy
-  const dividerFrame = race.frame || 'human';
 
   // Widoczny obszar okna + wykrycie klawiatury - wspólny hook.
   const { viewportHeight, keyboardVisible } = useKeyboardViewport();
@@ -874,10 +873,7 @@ function Messages() {
                 display: 'block',
                 height: { xs: '10px', sm: '18px' },
                 mt: { xs: 0.5, sm: 0.75 },
-                backgroundImage: `url(/ui/dividers/bottom-${dividerFrame}.png)`,
-                backgroundRepeat: 'no-repeat',
-                backgroundPosition: 'center',
-                backgroundSize: '100% 100%',
+                background: `linear-gradient(90deg, transparent, ${race.border}, transparent)`,
               },
             }}>
               {/* Panel postu - tło na całym polu między przedziałkami (razem z avatarem) */}
@@ -1050,10 +1046,9 @@ function Messages() {
                 sx={{
                   p: 1.5,
                   mb: 1.5,
-                  // Ozdobna ramka rasowa (border-image) wokół konwersacji.
-                  borderStyle: 'solid',
-                  borderWidth: '18px 22px',
-                  borderImage: `url(/ui/session/${dividerFrame}.png) 56 62 stretch`,
+                  // Obwódka w kolorze rasy - bez grafik.
+                  border: `1px solid ${race.border}`,
+                  borderTop: `3px solid ${race.accent}`,
                   backgroundColor: `${race.hex}12`,
                   backgroundClip: 'padding-box',
                   position: 'relative',
