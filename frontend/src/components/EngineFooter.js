@@ -30,7 +30,7 @@ export default function EngineFooter() {
         textShadow: '0 1px 3px rgba(0,0,0,0.95)',
       }}
     >
-      Gaaran Engine 2.0
+      Gaaran-Core
     </Box>
   );
 }

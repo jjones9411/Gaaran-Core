@@ -142,6 +142,9 @@ function CharacterCreator() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [races, setRaces] = useState([]);
   const [racesLoading, setRacesLoading] = useState(true);
+  const [characterClass, setCharacterClass] = useState('');
+  const [classes, setClasses] = useState([]);
+  const [classesLoading, setClassesLoading] = useState(true);
   const [raceIntro, setRaceIntro] = useState('');
 
   // Rasy pochodzą z bazy (dowolna liczba, zdefiniowana w kreatorze instalacyjnym)
@@ -153,6 +156,16 @@ function CharacterCreator() {
       .finally(() => setRacesLoading(false));
   }, []);
 
+  // Klasy - tak samo jak rasy: dowolna liczba, definiuje je administracja.
+  // Wybór klasy jest OPCJONALNY i jednorazowy (backend nie pozwala jej zmienić).
+  useEffect(() => {
+    fetch('/api/classes')
+      .then(res => res.json())
+      .then(data => setClasses(Array.isArray(data) ? data : []))
+      .catch(err => console.error('Błąd pobierania klas:', err))
+      .finally(() => setClassesLoading(false));
+  }, []);
+
   // Tekst wprowadzający o rasach (ustawiany przez admina w panelu ras)
   useEffect(() => {
     fetch('/api/game-info')
@@ -162,6 +175,7 @@ function CharacterCreator() {
   }, []);
 
   const getRace = (key) => races.find(r => r.key === key);
+  const getClass = (key) => classes.find(c => c.key === key);
 
   useEffect(() => {
     const checkCharacter = async () => {
@@ -245,7 +259,8 @@ function CharacterCreator() {
           name: characterName.trim(),
           gender,
           race: faction,
-          faction: faction
+          faction: faction,
+          characterClass: characterClass || null
         })
       });
 
@@ -362,7 +377,7 @@ function CharacterCreator() {
     return null;
   }
 
-  const steps = ['Dane Podstawowe', 'Rasa', 'Potwierdzenie'];
+  const steps = ['Dane Podstawowe', 'Rasa', 'Klasa', 'Potwierdzenie'];
 
   const genderButtonSx = (selected) => ({
     py: 2,
@@ -565,10 +580,91 @@ function CharacterCreator() {
     </Grid>
   );
 
-  const renderSummaryStep = () => (
+  // KROK III: klasa postaci. Tak samo fabularna jak rasa - nie daje żadnych
+  // bonusów, jest rolą, którą postać pełni w świecie. Można ją pominąć.
+  const renderClassStep = () => (
     <Fade in={activeStep === 2} timeout={500}>
       <Box sx={{ ...framedPanel, mb: 4, p: { xs: 3, md: 6 } }}>
-        <SectionTitle eyebrow="// Krok III" title="Potwierdzenie" />
+        <SectionTitle eyebrow="// Krok III" title="Wybór Klasy" />
+
+        <Typography sx={{
+          color: COLORS.secondary, textAlign: 'center', maxWidth: 800, mx: 'auto', mb: 5,
+          lineHeight: 1.8, fontSize: '0.92rem',
+        }}>
+          Klasa to rola, w jakiej postać funkcjonuje w świecie - nie daje żadnych
+          premii ani wartości liczbowych. Wybierasz ją raz; możesz też ten krok pominąć.
+        </Typography>
+
+        {classesLoading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+            <CircularProgress sx={{ color: COLORS.rust }} />
+          </Box>
+        ) : classes.length === 0 ? (
+          <Alert severity="info" sx={{ maxWidth: 600, mx: 'auto', borderRadius: 0 }}>
+            Administracja nie zdefiniowała jeszcze żadnych klas - przejdź dalej.
+          </Alert>
+        ) : (
+          <Grid container spacing={3} sx={{ maxWidth: 900, mx: 'auto' }}>
+            {classes.map((cls) => {
+              const isSelected = characterClass === cls.key;
+              return (
+                <Grid item xs={12} md={classes.length <= 4 ? Math.floor(12 / classes.length) || 12 : 4} key={cls.key}>
+                  <Box
+                    onClick={() => setCharacterClass(isSelected ? '' : cls.key)}
+                    sx={{
+                      minHeight: 200,
+                      height: '100%',
+                      cursor: 'pointer',
+                      position: 'relative',
+                      background: isSelected ? `${COLORS.rust}1f` : 'rgba(0,0,0,0.6)',
+                      border: `1px solid ${isSelected ? COLORS.rust : COLORS.border}`,
+                      borderRadius: 0,
+                      p: 3,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      textAlign: 'center',
+                      transition: 'all 0.28s ease',
+                      '&:hover': {
+                        transform: 'translateY(-6px)',
+                        borderColor: COLORS.rust,
+                      },
+                    }}
+                  >
+                    <Typography variant="h5" sx={{
+                      fontWeight: 'bold',
+                      color: isSelected ? COLORS.rust : COLORS.secondary,
+                      mb: 2, letterSpacing: '0.1em', textTransform: 'uppercase',
+                    }}>
+                      {cls.name}
+                    </Typography>
+                    {cls.description && (
+                      <Typography sx={{ color: COLORS.steelLight, fontSize: '0.85rem', lineHeight: 1.7 }}>
+                        {cls.description}
+                      </Typography>
+                    )}
+                    {isSelected && (
+                      <Typography sx={{
+                        mt: 'auto', pt: 2, color: COLORS.rust, fontSize: '0.68rem',
+                        letterSpacing: '0.22em', textTransform: 'uppercase', fontWeight: 'bold',
+                      }}>
+                        ✓ Wybrano
+                      </Typography>
+                    )}
+                  </Box>
+                </Grid>
+              );
+            })}
+          </Grid>
+        )}
+      </Box>
+    </Fade>
+  );
+
+  const renderSummaryStep = () => (
+    <Fade in={activeStep === 3} timeout={500}>
+      <Box sx={{ ...framedPanel, mb: 4, p: { xs: 3, md: 6 } }}>
+        <SectionTitle eyebrow="// Krok IV" title="Potwierdzenie" />
 
         <Box sx={{ maxWidth: 600, mx: 'auto', position: 'relative', zIndex: 3 }}>
           <Box sx={{ background: 'rgba(0,0,0,0.5)', border: `1px solid ${COLORS.border}`, borderLeft: `3px solid ${COLORS.rust}`, p: 3.5, mb: 4 }}>
@@ -593,6 +689,10 @@ function CharacterCreator() {
                 faction && getRace(faction) ? getRace(faction).name : 'Nie wybrano',
                 faction && getRace(faction) ? getRace(faction).color : undefined
               )}
+              {summaryField(
+                'Klasa',
+                characterClass && getClass(characterClass) ? getClass(characterClass).name : 'Bez klasy'
+              )}
             </Grid>
           </Box>
         </Box>
@@ -604,7 +704,8 @@ function CharacterCreator() {
     switch (activeStep) {
       case 0: return renderBasicInfoStep();
       case 1: return renderFactionStep();
-      case 2: return renderSummaryStep();
+      case 2: return renderClassStep();
+      case 3: return renderSummaryStep();
       default: return null;
     }
   };
@@ -613,7 +714,9 @@ function CharacterCreator() {
     switch (activeStep) {
       case 0: return characterName?.trim() && gender;
       case 1: return Boolean(faction);
+      // Klasa jest opcjonalna - można ją pominąć i grać bez niej.
       case 2: return true;
+      case 3: return true;
       default: return false;
     }
   };

@@ -1,4 +1,4 @@
-// Gaaran Engine - strona rasy (generyczna, dowolna liczba ras)
+// Gaaran-Core - strona rasy (generyczna, dowolna liczba ras)
 // Zastępuje dawne osobne komponenty Werewolves.js/Vampires.js/Mag.js
 // (po jednym na sztywno zakodowaną frakcję) - teraz jeden komponent
 // parametryzowany kluczem rasy z URL (/home/:raceKey).

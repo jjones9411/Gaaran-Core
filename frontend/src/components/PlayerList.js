@@ -263,8 +263,8 @@ const PlayerList = () => {
       setSortDir((prev) => (prev === 'asc' ? 'desc' : 'asc'));
     } else {
       setSortBy(column);
-      // Daty i poziom czyta się od "najwyżej/najświeżej", reszta od początku.
-      setSortDir(column === 'level' || column === 'lastLogin' ? 'desc' : 'asc');
+      // Daty czyta się od najświeższej, resztę od początku.
+      setSortDir(column === 'lastLogin' ? 'desc' : 'asc');
     }
   };
 
@@ -288,7 +288,6 @@ const PlayerList = () => {
       switch (sortBy) {
         case 'name': return dir * byText(a.character_name, b.character_name);
         case 'race': return dir * byText(getRaceName(a.faction), getRaceName(b.faction));
-        case 'level': return dir * ((a.level || 0) - (b.level || 0));
         case 'lastLogin': return dir * byTime(loginStamp(a), loginStamp(b));
         default: return dir * ((a.id || 0) - (b.id || 0));
       }
@@ -446,7 +445,6 @@ const PlayerList = () => {
                 <TableCell sx={headCellSx}>Rola fabularna</TableCell>
                 <TableCell sx={headCellSx}>Ranga konta</TableCell>
                 <SortableHead id="race" label="Rasa / płeć" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
-                <SortableHead id="level" label="Poziom" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} align="center" sx={{ width: 80 }} />
                 {showAdminColumns && (
                   <SortableHead
                     id="lastLogin"
@@ -612,22 +610,6 @@ const PlayerList = () => {
                       <Typography sx={{ color: appColors.textMuted, fontSize: '0.72rem', mt: 0.25 }}>
                         {player.gender || '—'}
                       </Typography>
-                    </TableCell>
-
-                    <TableCell align="center" sx={bodyCellSx}>
-                      <Box sx={{
-                        display: 'inline-block',
-                        minWidth: 34,
-                        px: 1,
-                        py: 0.25,
-                        border: `1px solid ${appColors.borderSteel}`,
-                        borderRadius: '2px',
-                        color: appColors.textLight,
-                        fontWeight: 'bold',
-                        fontSize: '0.85rem',
-                      }}>
-                        {player.level}
-                      </Box>
                     </TableCell>
 
                     {showAdminColumns && (

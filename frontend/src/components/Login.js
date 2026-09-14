@@ -7,7 +7,6 @@ import {
   useMediaQuery, useTheme
 } from '@mui/material';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
-import MenuBookIcon from '@mui/icons-material/MenuBook';
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import AuthBackdrop from './AuthBackdrop';
@@ -528,33 +527,8 @@ return (
                   </Box>
                 </Paper>
 
-                {/* PRZYCISKI: DISCORD + ENCYKLOPEDIA (lore dostępne przed zalogowaniem) */}
+                {/* PRZYCISK: DISCORD */}
                 <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
-                  <Button
-                    variant="outlined"
-                    startIcon={<MenuBookIcon sx={{ fontSize: '1rem' }} />}
-                    onClick={() => navigate('/encyklopedia')}
-                    sx={{
-                      color: authGoldLight,
-                      fontSize: '0.85rem',
-                      px: 2, py: 1,
-                      borderRadius: '0',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.1em',
-                      background: 'rgba(0, 0, 0, 0.4)',
-                      border: `2px solid ${authGold}`,
-                      '&:hover': {
-                        background: COLORS.glassRust,
-                        borderColor: authGoldLight,
-                        color: authGoldLight,
-                        transform: 'translateY(-2px)',
-                        boxShadow: `0 5px 15px ${authGold}66`
-                      }
-                    }}
-                  >
-                    Encyklopedia
-                  </Button>
-
                   <Button
                     variant="outlined"
                     onClick={() => window.open('https://discord.gg/4BCqgz8zBZ', '_blank')}

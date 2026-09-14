@@ -29,7 +29,7 @@ router.post('/createCharacter', verifyToken, async (req, res) => {
     return res.status(415).json({ message: 'Oczekiwano Content-Type: application/json' });
   }
 
-  const { name, gender, race, faction, description } = req.body;
+  const { name, gender, race, faction, description, characterClass } = req.body;
   const userId = req.user.id;
 
   // ---- Walidacja wejścia (przed otwarciem transakcji - nie ma czego wycofywać) ----
@@ -131,12 +131,31 @@ router.post('/createCharacter', verifyToken, async (req, res) => {
       return res.status(400).json({ message: 'Nieznana rasa.' });
     }
 
+    // Klasa jest OPCJONALNA (gracz może ją pominąć w kreatorze), ale jeśli
+    // przyszła - musi istnieć i być aktywna. Tak samo jak rasa: sama etykieta.
+    const classKey = typeof characterClass === 'string' && characterClass.trim()
+      ? characterClass.trim()
+      : null;
+
+    if (classKey) {
+      const [classRows] = await connection.query(
+        'SELECT id FROM classes WHERE `key` = ? AND is_active = 1',
+        [classKey]
+      );
+      if (classRows.length === 0) {
+        await connection.rollback();
+        connection.release();
+        return res.status(400).json({ message: 'Nieznana klasa.' });
+      }
+    }
+
     // Inicjalizuj kartę postaci
     const initialCharacterCard = {
       name: trimmedName,
       race: faction,
       gender: gender,
       faction: faction,
+      class: classKey,
       skills: [],
       flaws: [],
       backstory: safeDescription,
@@ -152,16 +171,17 @@ router.post('/createCharacter', verifyToken, async (req, res) => {
 
     const [insertResult] = await connection.query(
       `INSERT INTO characters (
-        user_id, name, gender, race, faction, description,
+        user_id, name, gender, race, faction, \`class\`, description,
         informacje, approved, is_active, last_played,
         status, avatar, player_status, isProfileApproved, informacja
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, ?, ?, ?, ?)`,
       [
         userId,
         trimmedName,
         gender,
         faction,
         faction,
+        classKey,
         safeDescription,
         JSON.stringify(initialCharacterCard),
         autoApproved, // approved (NPC: od razu zatwierdzona)
@@ -209,6 +229,7 @@ router.post('/createCharacter', verifyToken, async (req, res) => {
         race: faction,
         gender: gender,
         faction: faction,
+        class: classKey,
         approved: Boolean(autoApproved),
         isActive: true,
         userId: userId

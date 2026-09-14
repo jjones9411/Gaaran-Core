@@ -422,40 +422,6 @@ const CharacterCard3D = ({
                     </Box>
                 )}
 
-                <Box sx={{
-                    position: 'absolute',
-                    bottom: 16,
-                    left: 16,
-                    bgcolor: 'rgba(0,0,0,0.85)',
-                    border: `1px solid ${appColors.steel}`,
-                    borderLeft: `3px solid ${theme.palette.primary.main}`,
-                    borderRadius: '2px',
-                    px: 1.5,
-                    py: 0.5,
-                    display: 'flex',
-                    alignItems: 'baseline',
-                    gap: 0.75,
-                    zIndex: 3,
-                }}>
-                    <Typography sx={{
-                        color: appColors.textMuted,
-                        fontSize: '0.6rem',
-                        
-                        fontWeight: 'bold',
-                        letterSpacing: '0.15em',
-                    }}>
-                        LVL
-                    </Typography>
-                    <Typography sx={{
-                        color: theme.palette.primary.main,
-                        fontSize: '1.4rem',
-                        fontWeight: 900,
-                        
-                        lineHeight: 1,
-                    }}>
-                        {character.level || 1}
-                    </Typography>
-                </Box>
             </Box>
 
             <Box sx={{
@@ -568,93 +534,44 @@ const CharacterCard3D = ({
     );
 };
 
-// Dialog resetu postaci
+// Dialog pożegnania postaci ("reset").
+//
+// W tym silniku reset jest wydarzeniem FABULARNYM, nie mechanicznym: postać nie
+// wraca na start z czystymi wartościami - jej historia się domyka, a ona sama
+// trafia na cmentarz. Dlatego zamiast formularza nowej postaci jest tu jedno
+// pytanie: jak ta historia się skończyła.
 const ResetCharacterDialog = ({ open, character, onClose, onConfirm }) => {
     const theme = useTheme();
     const toastStyle = getToastStyle(theme);
     const [password, setPassword] = useState('');
-    const [newName, setNewName] = useState('');
-    const [newGender, setNewGender] = useState('');
-    const [newFaction, setNewFaction] = useState('');
-    const [newAge, setNewAge] = useState(25);
-    const [newDescription, setNewDescription] = useState('');
-    const [preview, setPreview] = useState(null);
-    const [step, setStep] = useState(1);
-    const [races, setRaces] = useState([]);
-
-    // Pobierz listę ras (do mapowania klucza rasy na czytelną nazwę)
-    useEffect(() => {
-        fetch('/api/races?includeInactive=1')
-            .then(res => res.json())
-            .then(data => setRaces(Array.isArray(data) ? data : []))
-            .catch(err => console.error('Błąd pobierania ras:', err));
-    }, []);
-
-    const getRaceName = (key) => races.find(r => r.key === key)?.name || key || '-';
-
-    const handleInitiate = async () => {
-        if (!password || !newName || !newGender || !newFaction) {
-            toast.error('Wypełnij wszystkie wymagane pola', toastStyle);
-            return;
-        }
-
-        const token = localStorage.getItem('token');
-        try {
-            const res = await fetch(`${API_BASE}/lobby/reset/initiate`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({
-                    // Postać kliknięta na liście w lobby. Bez tego serwer
-                    // zgadywał ją z `is_active`/tokena, a w lobby zwykle nie ma
-                    // aktywnej postaci - stąd "Brak aktywnej postaci do
-                    // zresetowania". Gdy jakaś akurat była aktywna, zgadywanie
-                    // trafiało w nią zamiast w tę wskazaną przez gracza.
-                    characterId: character?.id,
-                    password,
-                    newName,
-                    newGender,
-                    newFaction,
-                    newAge,
-                    newDescription,
-                }),
-            });
-
-            if (!res.ok) throw new Error(await safeError(res));
-            const data = await safeJson(res);
-            
-            setPreview(data.preview);
-            setStep(2);
-            toast.success('Podgląd resetu gotowy', toastStyle);
-        } catch (err) {
-            toast.error(err.message, toastStyle);
-        }
-    };
-
-    const handleConfirm = async () => {
-        await onConfirm(character?.id);
-        handleClose();
-    };
+    const [deathReason, setDeathReason] = useState('');
+    const [confirmText, setConfirmText] = useState('');
 
     const handleClose = () => {
         setPassword('');
-        setNewName('');
-        setNewGender('');
-        setNewFaction('');
-        setNewAge(25);
-        setNewDescription('');
-        setPreview(null);
-        setStep(1);
+        setDeathReason('');
+        setConfirmText('');
         onClose();
+    };
+
+    const handleConfirm = async () => {
+        if (!password) {
+            toast.error('Wpisz hasło', toastStyle);
+            return;
+        }
+        if (confirmText !== character?.name) {
+            toast.error('Przepisz imię postaci, żeby potwierdzić', toastStyle);
+            return;
+        }
+        await onConfirm({ password, deathReason });
+        handleClose();
     };
 
     return (
         <Dialog
             open={open}
             onClose={handleClose}
-            maxWidth="md"
+            maxWidth="sm"
             fullWidth
             PaperProps={{
                 sx: {
@@ -666,11 +583,8 @@ const ResetCharacterDialog = ({ open, character, onClose, onConfirm }) => {
             }}
         >
             <DialogTitle sx={{
-                bgcolor: theme.palette.mode === 'dark'
-                    ? 'rgba(0, 0, 0, 0.4)'
-                    : 'rgba(0, 0, 0, 0.05)',
+                bgcolor: theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.4)' : 'rgba(0, 0, 0, 0.05)',
                 color: theme.palette.text.primary,
-                
                 fontWeight: 'bold',
                 fontSize: '1.3rem',
                 display: 'flex',
@@ -679,312 +593,60 @@ const ResetCharacterDialog = ({ open, character, onClose, onConfirm }) => {
                 letterSpacing: '0.05em',
                 borderBottom: `1px solid ${theme.palette.divider}`,
             }}>
-                {step === 1 ? 'RESETUJ POSTAĆ' : 'PODGLĄD ZMIAN'}
+                ZAMKNIJ HISTORIĘ POSTACI
                 <IconButton onClick={handleClose} sx={{ color: theme.palette.text.secondary }}>
                     <CloseIcon />
                 </IconButton>
             </DialogTitle>
 
             <DialogContent sx={{ mt: 3 }}>
-                {step === 1 ? (
-                    <Stack spacing={3}>
-                        <Alert
-                            severity="warning"
-                            sx={{
-                                
-                            }}
-                        >
-                            Reset zachowa ID postaci, ale wyzeruje wszystkie statystyki i postęp!
-                            Jedną postać można zresetować raz na 7 dni.
-                        </Alert>
+                <Stack spacing={3}>
+                    <Alert severity="warning">
+                        Postać <b>{character?.name}</b> odejdzie ze sceny i spocznie na cmentarzu.
+                        Jej posty w sesjach i wiadomości zostają - znika z lobby i nie można nią
+                        dalej grać. Slot po niej nie wraca.
+                    </Alert>
 
-                        <TextField
-                            fullWidth
-                            type="password"
-                            label="Hasło do konta"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                            sx={{
-                                '& .MuiOutlinedInput-root': {
-                                    color: theme.palette.text.primary,
-                                    
-                                    borderRadius: '4px',
-                                    '& fieldset': { borderColor: theme.palette.divider },
-                                    '&:hover fieldset': { borderColor: theme.palette.secondary.light },
-                                    '&.Mui-focused fieldset': { borderColor: theme.palette.primary.main },
-                                },
-                                '& .MuiInputLabel-root': { 
-                                    color: theme.palette.text.secondary,
-                                    
-                                    '&.Mui-focused': { color: theme.palette.primary.main },
-                                },
-                            }}
-                        />
+                    <TextField
+                        label="Jak skończyła się jej historia (epitafium)"
+                        value={deathReason}
+                        onChange={(e) => setDeathReason(e.target.value)}
+                        placeholder="np. Zginęła, broniąc przeprawy"
+                        fullWidth
+                        multiline
+                        minRows={2}
+                        helperText="Pole opcjonalne - ten tekst zobaczą odwiedzający cmentarz."
+                    />
 
-                        <TextField
-                            fullWidth
-                            label="Nowe imię postaci"
-                            value={newName}
-                            onChange={(e) => setNewName(e.target.value)}
-                            required
-                            sx={{
-                                '& .MuiOutlinedInput-root': {
-                                    color: theme.palette.text.primary,
-                                    
-                                    borderRadius: '4px',
-                                    '& fieldset': { borderColor: theme.palette.divider },
-                                    '&:hover fieldset': { borderColor: theme.palette.secondary.light },
-                                    '&.Mui-focused fieldset': { borderColor: theme.palette.primary.main },
-                                },
-                                '& .MuiInputLabel-root': { 
-                                    color: theme.palette.text.secondary,
-                                    
-                                    '&.Mui-focused': { color: theme.palette.primary.main },
-                                },
-                            }}
-                        />
+                    <TextField
+                        label="Hasło do konta"
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        fullWidth
+                    />
 
-                        <TextField
-                            fullWidth
-                            select
-                            label="Płeć"
-                            value={newGender}
-                            onChange={(e) => setNewGender(e.target.value)}
-                            required
-                            sx={{
-                                '& .MuiOutlinedInput-root': {
-                                    color: theme.palette.text.primary,
-                                    
-                                    borderRadius: '4px',
-                                    '& fieldset': { borderColor: theme.palette.divider },
-                                    '&:hover fieldset': { borderColor: theme.palette.secondary.light },
-                                    '&.Mui-focused fieldset': { borderColor: theme.palette.primary.main },
-                                },
-                                '& .MuiInputLabel-root': { 
-                                    color: theme.palette.text.secondary,
-                                    
-                                    '&.Mui-focused': { color: theme.palette.primary.main },
-                                },
-                            }}
-                        >
-                            <MenuItem value="Mężczyzna">Mężczyzna</MenuItem>
-                            <MenuItem value="Kobieta">Kobieta</MenuItem>
-                        </TextField>
-
-                        <TextField
-                            fullWidth
-                            select
-                            label="Rasa"
-                            value={newFaction}
-                            onChange={(e) => setNewFaction(e.target.value)}
-                            required
-                            sx={{
-                                '& .MuiOutlinedInput-root': {
-                                    color: theme.palette.text.primary,
-                                    
-                                    borderRadius: '4px',
-                                    '& fieldset': { borderColor: theme.palette.divider },
-                                    '&:hover fieldset': { borderColor: theme.palette.secondary.light },
-                                    '&.Mui-focused fieldset': { borderColor: theme.palette.primary.main },
-                                },
-                                '& .MuiInputLabel-root': { 
-                                    color: theme.palette.text.secondary,
-                                    
-                                    '&.Mui-focused': { color: theme.palette.primary.main },
-                                },
-                            }}
-                        >
-                            {races.map((race) => (
-                                <MenuItem key={race.key} value={race.key}>{race.name}</MenuItem>
-                            ))}
-                        </TextField>
-
-                        <TextField
-                            fullWidth
-                            type="number"
-                            label="Wiek"
-                            value={newAge}
-                            onChange={(e) => setNewAge(parseInt(e.target.value))}
-                            inputProps={{ min: 1 }}
-                            sx={{
-                                '& .MuiOutlinedInput-root': {
-                                    color: theme.palette.text.primary,
-                                    
-                                    borderRadius: '4px',
-                                    '& fieldset': { borderColor: theme.palette.divider },
-                                    '&:hover fieldset': { borderColor: theme.palette.secondary.light },
-                                    '&.Mui-focused fieldset': { borderColor: theme.palette.primary.main },
-                                },
-                                '& .MuiInputLabel-root': { 
-                                    color: theme.palette.text.secondary,
-                                    
-                                    '&.Mui-focused': { color: theme.palette.primary.main },
-                                },
-                            }}
-                        />
-
-                        <TextField
-                            fullWidth
-                            multiline
-                            rows={4}
-                            label="Nowy opis postaci"
-                            value={newDescription}
-                            onChange={(e) => setNewDescription(e.target.value)}
-                            sx={{
-                                '& .MuiOutlinedInput-root': {
-                                    color: theme.palette.text.primary,
-                                    
-                                    borderRadius: '4px',
-                                    '& fieldset': { borderColor: theme.palette.divider },
-                                    '&:hover fieldset': { borderColor: theme.palette.secondary.light },
-                                    '&.Mui-focused fieldset': { borderColor: theme.palette.primary.main },
-                                },
-                                '& .MuiInputLabel-root': { 
-                                    color: theme.palette.text.secondary,
-                                    
-                                    '&.Mui-focused': { color: theme.palette.primary.main },
-                                },
-                            }}
-                        />
-                    </Stack>
-                ) : (
-                    <Box>
-                        <Typography variant="h6" sx={{ 
-                            color: theme.palette.text.primary, 
-                            mb: 2,
-                            
-                            letterSpacing: '0.05em',
-                        }}>
-                            PORÓWNANIE:
-                        </Typography>
-
-                        <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
-                            <Paper sx={{ 
-                                flex: 1, 
-                                p: 2, 
-                                bgcolor: 'rgba(220, 38, 38, 0.1)',
-                                border: `1px solid ${theme.palette.error.main}`,
-                                borderRadius: '4px',
-                            }}>
-                                <Typography variant="subtitle1" sx={{ 
-                                    color: theme.palette.error.text, 
-                                    fontWeight: 'bold',
-                                    mb: 2,
-                                    
-                                    letterSpacing: '0.05em',
-                                }}>
-                                    STARA POSTAĆ
-                                </Typography>
-                                <Typography sx={{ color: theme.palette.text.primary, mb: 1,  fontSize: '0.9rem' }}>
-                                    Imię: {preview?.old.name}
-                                </Typography>
-                                <Typography sx={{ color: theme.palette.text.primary, mb: 1,  fontSize: '0.9rem' }}>
-                                    Płeć: {preview?.old.gender}
-                                </Typography>
-                                <Typography sx={{ color: theme.palette.text.primary,  fontSize: '0.9rem' }}>
-                                    Rasa: {getRaceName(preview?.old.faction)}
-                                </Typography>
-                            </Paper>
-
-                            <Paper sx={{ 
-                                flex: 1, 
-                                p: 2, 
-                                bgcolor: 'rgba(34, 197, 94, 0.1)',
-                                border: `1px solid ${theme.palette.success.main}`,
-                                borderRadius: '4px',
-                            }}>
-                                <Typography variant="subtitle1" sx={{ 
-                                    color: theme.palette.success.text, 
-                                    fontWeight: 'bold',
-                                    mb: 2,
-                                    
-                                    letterSpacing: '0.05em',
-                                }}>
-                                    NOWA POSTAĆ
-                                </Typography>
-                                <Typography sx={{ color: theme.palette.text.primary, mb: 1,  fontSize: '0.9rem' }}>
-                                    Imię: {preview?.new.name}
-                                </Typography>
-                                <Typography sx={{ color: theme.palette.text.primary, mb: 1,  fontSize: '0.9rem' }}>
-                                    Płeć: {preview?.new.gender}
-                                </Typography>
-                                <Typography sx={{ color: theme.palette.text.primary, mb: 1,  fontSize: '0.9rem' }}>
-                                    Rasa: {getRaceName(preview?.new.faction)}
-                                </Typography>
-                                <Typography sx={{ color: theme.palette.text.primary, mb: 1,  fontSize: '0.9rem' }}>
-                                    Wiek: {preview?.new.age}
-                                </Typography>
-                            </Paper>
-                        </Stack>
-
-                        <Alert 
-                            severity="info" 
-                            sx={{
-                                bgcolor: 'rgba(59, 130, 246, 0.1)',
-                                border: `1px solid ${theme.palette.info.main}`,
-                                borderRadius: '4px',
-                                color: theme.palette.text.primary,
-                                
-                                '& .MuiAlert-icon': { color: theme.palette.info.text },
-                            }}
-                        >
-                            ID postaci pozostanie niezmienione. Wiadomości i historia będą zachowane.
-                        </Alert>
-                    </Box>
-                )}
+                    <TextField
+                        label={`Przepisz imię postaci: ${character?.name || ''}`}
+                        value={confirmText}
+                        onChange={(e) => setConfirmText(e.target.value)}
+                        fullWidth
+                    />
+                </Stack>
             </DialogContent>
 
-            <DialogActions sx={{ p: 3, bgcolor: theme.palette.secondary.dark, borderTop: `1px solid ${theme.palette.divider}` }}>
-                <Button
-                    onClick={handleClose}
-                    sx={{
-                        color: theme.palette.text.secondary,
-                        
-                        letterSpacing: '0.05em',
-                        '&:hover': { color: theme.palette.text.primary },
-                    }}
-                >
-                    ANULUJ
+            <DialogActions sx={{ p: 2, borderTop: `1px solid ${theme.palette.divider}` }}>
+                <Button onClick={handleClose} sx={{ color: theme.palette.text.secondary }}>
+                    Anuluj
                 </Button>
-                {step === 1 ? (
-                    <Button
-                        onClick={handleInitiate}
-                        variant="contained"
-                        sx={{
-                            bgcolor: theme.palette.primary.main,
-                            color: theme.palette.text.primary,
-                            fontWeight: 'bold',
-                            
-                            letterSpacing: '0.05em',
-                            borderRadius: '4px',
-                            '&:hover': {
-                                bgcolor: theme.palette.primary.light,
-                                boxShadow: `0 4px 12px ${theme.palette.primary.main}80`,
-                            },
-                        }}
-                    >
-                        DALEJ
-                    </Button>
-                ) : (
-                    <Button
-                        onClick={handleConfirm}
-                        variant="contained"
-                        sx={{
-                            bgcolor: theme.palette.success.main,
-                            color: theme.palette.text.primary,
-                            fontWeight: 'bold',
-                            
-                            letterSpacing: '0.05em',
-                            borderRadius: '4px',
-                            '&:hover': {
-                                bgcolor: theme.palette.success.dark,
-                            },
-                        }}
-                    >
-                        POTWIERDŹ
-                    </Button>
-                )}
+                <Button
+                    onClick={handleConfirm}
+                    variant="contained"
+                    color="warning"
+                    disabled={!password || confirmText !== character?.name}
+                >
+                    Pożegnaj postać
+                </Button>
             </DialogActions>
         </Dialog>
     );
@@ -1344,33 +1006,36 @@ const handleSelectCharacter = useCallback(async (character) => {
         setResetDialog({ open: true, character });
     }, []);
 
-    const handleConfirmReset = useCallback(async (characterId) => {
+    const handleConfirmReset = useCallback(async ({ password, deathReason }) => {
         try {
-            const res = await fetch(`${API_BASE}/lobby/reset/confirm`, {
+            const res = await fetch(`${API_BASE}/lobby/reset`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${token}`,
                 },
-                // Ta sama postać co w kroku "initiate" - serwer nie zgaduje.
-                body: JSON.stringify({ characterId }),
+                body: JSON.stringify({
+                    characterId: resetDialog.character?.id,
+                    password,
+                    deathReason,
+                }),
             });
 
             if (!res.ok) throw new Error(await safeError(res));
 
             const data = await res.json().catch(() => ({}));
-            // Świeży token z nowymi danymi zresetowanej postaci - bez tego front
-            // pokazywał starą nazwę/avatar do przelogowania
+            // Pożegnana postać nie może zostać w tokenie - backend oddaje świeży,
+            // bez aktywnej postaci.
             if (data.token) {
                 updateCharacter(data.token);
             }
 
-            toast.success('Postać została zresetowana!', toastStyle);
+            toast.success(data.message || 'Historia postaci dobiegła końca', toastStyle);
             loadCharacters(0, true);
         } catch (err) {
             toast.error(err.message, toastStyle);
         }
-    }, [token, loadCharacters, updateCharacter]);
+    }, [token, loadCharacters, updateCharacter, resetDialog.character, toastStyle]);
 
     const handleDeleteCharacter = useCallback((character) => {
         setDeleteDialog({ open: true, character });

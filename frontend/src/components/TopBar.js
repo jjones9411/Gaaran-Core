@@ -118,12 +118,10 @@ function TopBar() {
   // Auto-detect active tab from path
   useEffect(() => {
     const path = location.pathname;
-    if (path.match(/\/(profile|notes)/)) setActiveTab('POSTAĆ');
-    // Cmentarz nie ma już pozycji w menu, ale strona wciąż istnieje - niech podświetla ŚWIAT.
-    else if (path.match(/\/(city|hospital|arena|rest|cemetery)(\/|$)/)) setActiveTab('ŚWIAT');
+    if (path.match(/\/(profile|notes|cemetery)/)) setActiveTab('POSTAĆ');
     else if (path.match(/\/(messages|privateSessions|generalSessions|journal|tavern|logs)(\/|$)/)) setActiveTab('KOMUNIKACJA');
     else if (races.some(r => path.includes(`/${r.key}`))) setActiveTab('RASY');
-    else if (path.match(/\/(infopanel|law|bestiary|mechanics|technology|alchemy-guide|history|drugs|npc|players|rules)/)) setActiveTab('PORADNIKI');
+    else if (path.match(/\/(infopanel|npc|players|rules)/)) setActiveTab('PORADNIKI');
     else setActiveTab(null);
   }, [location.pathname, races]);
 
@@ -132,6 +130,7 @@ function TopBar() {
     'POSTAĆ': [
       { label: 'Profil', path: `/home/profile/${characterId}` },
       { label: 'Notatki', path: '/home/notes' },
+      { label: 'Cmentarz', path: '/home/cemetery' },
     ],
     'KOMUNIKACJA': [
       // Codziennik pierwszy - to od niego zaczyna się "co mam dziś odpisać".

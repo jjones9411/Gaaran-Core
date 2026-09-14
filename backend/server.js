@@ -1,12 +1,7 @@
-// Gaaran Engine 1.0 - please do not share or use without permission
-// Author: Gaaran
-// Date: 2025-02-20
-// Version: 1.0
-// Description: A simple engine for texting games
-// License: MIT
-// Copyright (c) 2025 Gaaran
-// If you want to use it please contact me on Discord: cerber941
-// or email: vangalloth@gmail.com
+// Gaaran-Core - silnik gry fabularnej (bez mechaniki)
+// Autor: Gaaran
+// Licencja: MIT
+// Kontakt: Discord cerber941, vangalloth@gmail.com
 
 require('dotenv').config();
 const express = require('express');

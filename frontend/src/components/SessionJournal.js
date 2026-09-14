@@ -1,38 +1,7 @@
-// Gaaran Engine 1.0 - please do not share or use without permission
-// Author: Gaaran
-// Date: 2025-02-20
-// Version: 1.0
-// Description: A simple engine for texting games
-// License: MIT
-// If you want to use it please contact me on Discord: cerber941
-// or email: vangalloth@gmail.com
-//
-// CODZIENNIK POSTACI
-// Jedna lista wszystkich sesji (prywatnych i ogólnych), w których gra postać,
-// odpowiadająca na pytanie „gdzie muszę odpisać?":
-//   * zielone  - ostatni wpis w sesji jest Twój,
-//   * czerwone - ktoś odpisał po Tobie (albo sesja ruszyła bez Twojego wpisu),
-//   * szare    - w sesji nie ma jeszcze żadnego wpisu.
-// Kolor liczy backend z samych wiadomości (routes/sessionJournal.js), więc samo
-// zajrzenie do sesji NIE gasi czerwonego - dopiero wysłany odpis.
-//
-// TRZY ZAKŁADKI - TYLKO GRAM / GRAM I MG / MG. Jedna lista mieszała granie
-// z prowadzeniem, a to dwa różne rodzaje roboty: przy graniu pytanie brzmi
-// „gdzie mam odpisać", przy prowadzeniu „gdzie mam napisać scenę". Dzieli je
-// to, CZYM w sesji odpisujesz: samą postacią, postacią i trybem narratora, czy
-// wyłącznie trybem narratora. Tryb udziału liczy backend z samych wpisów postaci
-// (`participation`), więc zakładka nie jest deklaracją, tylko stanem faktycznym.
-// Kafelki podsumowania i filtry działają W OBRĘBIE wybranej zakładki - liczby
-// nad listą mówią o tym, co w niej widać, a nie o czymś obok.
-//
-// UKŁAD KARTY - od góry: PASEK RUCHU (kto ma ruch i od kiedy), tytuł, plakietki,
-// wiersz odpisów, wiersz narracji, przyciski. Wcześniej wszystko szło jednym
-// rzędem drobnych chipów (status + rodzaj + rola + stan narracji + znacznik +
-// nieprzeczytane), przez co najważniejsza informacja - „czy to na mnie" - ginęła
-// wśród pięciu innych. Narracja jest wpleciona w pasek ruchu, bo post narratora
-// to normalny wpis w sesji: gdy poszedł po Twoim ostatnim wpisie, ruch jest
-// Twój - i tak samo świeci na czerwono, niezależnie od tego, czy prowadzisz
-// sesję, czy tylko w niej grasz.
+// Gaaran-Core - silnik gry fabularnej (bez mechaniki)
+// Autor: Gaaran
+// Licencja: MIT
+// Kontakt: Discord cerber941, vangalloth@gmail.com
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';

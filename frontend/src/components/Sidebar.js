@@ -614,20 +614,15 @@ return (
         <ListItemText primary="Profil" />
       </MenuItem>
       
-      <MenuItem onClick={(e) => handleNavClick('/home/statscard', e)} onContextMenu={(e) => handleNavContextMenu('/home/statscard', e)} sx={menuItemStyle}>
-        <ListItemText primary="Statystyki" />
-      </MenuItem>
       
-      <MenuItem onClick={(e) => handleNavClick('/home/equipment', e)} onContextMenu={(e) => handleNavContextMenu('/home/equipment', e)} sx={menuItemStyle}>
-        <ListItemText primary="Ekwipunek" />
-      </MenuItem>
 
-      <MenuItem onClick={(e) => handleNavClick('/home/city', e)} onContextMenu={(e) => handleNavContextMenu('/home/city', e)} sx={menuItemStyle}>
-        <ListItemText primary="Miasto" />
-      </MenuItem>
 
       <MenuItem onClick={(e) => handleNavClick('/home/notes', e)} onContextMenu={(e) => handleNavContextMenu('/home/notes', e)} sx={menuItemStyle}>
         <ListItemText primary="Notatki" />
+      </MenuItem>
+
+      <MenuItem onClick={(e) => handleNavClick('/home/cemetery', e)} onContextMenu={(e) => handleNavContextMenu('/home/cemetery', e)} sx={menuItemStyle}>
+        <ListItemText primary="Cmentarz" />
       </MenuItem>
 
       {/* Logi bez badge'a - powiadomienia z logów są wyłączone (patrz useHudPolling) */}
@@ -692,24 +687,6 @@ return (
           </MenuItem>
           <MenuItem onClick={(e) => handleNavClick('/home/infopanel2', e)} onContextMenu={(e) => handleNavContextMenu('/home/infopanel2', e)} sx={menuItemStyle}>
             <ListItemText primary="Informacje" sx={{ pl: 2 }} />
-          </MenuItem>
-          <MenuItem onClick={(e) => handleNavClick('/home/law', e)} onContextMenu={(e) => handleNavContextMenu('/home/law', e)} sx={menuItemStyle}>
-            <ListItemText primary="Prawo" sx={{ pl: 2 }} />
-          </MenuItem>
-          <MenuItem onClick={(e) => handleNavClick('/home/bestiary', e)} onContextMenu={(e) => handleNavContextMenu('/home/bestiary', e)} sx={menuItemStyle}>
-            <ListItemText primary="Zwierzęta" sx={{ pl: 2 }} />
-          </MenuItem>
-          <MenuItem onClick={(e) => handleNavClick('/home/mechanics', e)} onContextMenu={(e) => handleNavContextMenu('/home/mechanics', e)} sx={menuItemStyle}>
-            <ListItemText primary="Mechanika" sx={{ pl: 2 }} />
-          </MenuItem>
-          <MenuItem onClick={(e) => handleNavClick('/home/technology', e)} onContextMenu={(e) => handleNavContextMenu('/home/technology', e)} sx={menuItemStyle}>
-            <ListItemText primary="Technologia" sx={{ pl: 2 }} />
-          </MenuItem>
-          <MenuItem onClick={(e) => handleNavClick('/home/alchemy-guide', e)} onContextMenu={(e) => handleNavContextMenu('/home/alchemy-guide', e)} sx={menuItemStyle}>
-            <ListItemText primary="Alchemia" sx={{ pl: 2 }} />
-          </MenuItem>
-          <MenuItem onClick={(e) => handleNavClick('/home/history', e)} onContextMenu={(e) => handleNavContextMenu('/home/history', e)} sx={menuItemStyle}>
-            <ListItemText primary="Historia" sx={{ pl: 2 }} />
           </MenuItem>
           <MenuItem onClick={(e) => handleNavClick('/home/npc', e)} onContextMenu={(e) => handleNavContextMenu('/home/npc', e)} sx={menuItemStyle}>
             <ListItemText primary="NPC" sx={{ pl: 2 }} />
@@ -895,9 +872,6 @@ return (
 
             {/* Miasto i Profil */}
             <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0.3 }}>
-              <Button variant="contained" sx={{ ...mainButtonStyle, fontSize: '9px', py: 0.6 }} onClick={(e) => handleButtonClick('/home/city', e)} onContextMenu={(e) => handleButtonContextMenu('/home/city', e)}>
-                Miasto
-              </Button>
               <Button variant="contained" sx={{ ...mainButtonStyle, fontSize: '9px', py: 0.6 }} onClick={(e) => handleButtonClick(`/home/profile/${characterId}`, e)} onContextMenu={(e) => handleButtonContextMenu(`/home/profile/${characterId}`, e)}>
                 Profil
               </Button>
@@ -957,12 +931,6 @@ return (
               <Button variant="contained" sx={mainButtonStyle} onClick={(e) => handleButtonClick(`/home/profile/${characterId}`, e)} onContextMenu={(e) => handleButtonContextMenu(`/home/profile/${characterId}`, e)} onAuxClick={(e) => e.button === 1 && handleButtonClick(`/home/profile/${characterId}`, e)}>
                 Profil
               </Button>
-              <Button variant="contained" sx={mainButtonStyle} onClick={(e) => handleButtonClick('/home/statscard', e)} onContextMenu={(e) => handleButtonContextMenu('/home/statscard', e)} onAuxClick={(e) => e.button === 1 && handleButtonClick('/home/statscard', e)}>
-                Statystyki
-              </Button>
-              <Button variant="contained" sx={mainButtonStyle} onClick={(e) => handleButtonClick('/home/equipment', e)} onContextMenu={(e) => handleButtonContextMenu('/home/equipment', e)} onAuxClick={(e) => e.button === 1 && handleButtonClick('/home/equipment', e)}>
-                Ekwipunek
-              </Button>
             </Box>
 
             {/* ŚWIAT */}
@@ -981,11 +949,11 @@ return (
               Świat
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.3, mb: 1 }}>
-              <Button variant="contained" sx={mainButtonStyle} onClick={(e) => handleButtonClick('/home/city', e)} onContextMenu={(e) => handleButtonContextMenu('/home/city', e)} onAuxClick={(e) => e.button === 1 && handleButtonClick('/home/city', e)}>
-                Miasto
-              </Button>
               <Button variant="contained" sx={mainButtonStyle} onClick={(e) => handleButtonClick('/home/notes', e)} onContextMenu={(e) => handleButtonContextMenu('/home/notes', e)} onAuxClick={(e) => e.button === 1 && handleButtonClick('/home/notes', e)}>
                 Notatki
+              </Button>
+              <Button variant="contained" sx={mainButtonStyle} onClick={(e) => handleButtonClick('/home/cemetery', e)} onContextMenu={(e) => handleButtonContextMenu('/home/cemetery', e)} onAuxClick={(e) => e.button === 1 && handleButtonClick('/home/cemetery', e)}>
+                Cmentarz
               </Button>
               {/* Logi bez badge'a - powiadomienia z logów są wyłączone (patrz useHudPolling) */}
               <Button variant="contained" sx={mainButtonStyle} onClick={(e) => handleButtonClick('/home/logs', e)} onContextMenu={(e) => handleButtonContextMenu('/home/logs', e)} onAuxClick={(e) => e.button === 1 && handleButtonClick('/home/logs', e)}>
@@ -1105,24 +1073,6 @@ return (
                     </Button>
                     <Button variant="contained" sx={subButtonStyle} onClick={(e) => handleButtonClick('/home/infopanel2', e)} onContextMenu={(e) => handleButtonContextMenu('/home/infopanel2', e)} onAuxClick={(e) => e.button === 1 && handleButtonClick('/home/infopanel2', e)}>
                       Informacje
-                    </Button>
-                    <Button variant="contained" sx={subButtonStyle} onClick={(e) => handleButtonClick('/home/law', e)} onContextMenu={(e) => handleButtonContextMenu('/home/law', e)} onAuxClick={(e) => e.button === 1 && handleButtonClick('/home/law', e)}>
-                      Prawo
-                    </Button>
-                    <Button variant="contained" sx={subButtonStyle} onClick={(e) => handleButtonClick('/home/bestiary', e)} onContextMenu={(e) => handleButtonContextMenu('/home/bestiary', e)} onAuxClick={(e) => e.button === 1 && handleButtonClick('/home/bestiary', e)}>
-                      Zwierzęta
-                    </Button>
-                    <Button variant="contained" sx={subButtonStyle} onClick={(e) => handleButtonClick('/home/mechanics', e)} onContextMenu={(e) => handleButtonContextMenu('/home/mechanics', e)} onAuxClick={(e) => e.button === 1 && handleButtonClick('/home/mechanics', e)}>
-                      Mechanika
-                    </Button>
-                    <Button variant="contained" sx={subButtonStyle} onClick={(e) => handleButtonClick('/home/technology', e)} onContextMenu={(e) => handleButtonContextMenu('/home/technology', e)} onAuxClick={(e) => e.button === 1 && handleButtonClick('/home/technology', e)}>
-                      Technologia
-                    </Button>
-                    <Button variant="contained" sx={subButtonStyle} onClick={(e) => handleButtonClick('/home/alchemy-guide', e)} onContextMenu={(e) => handleButtonContextMenu('/home/alchemy-guide', e)} onAuxClick={(e) => e.button === 1 && handleButtonClick('/home/alchemy-guide', e)}>
-                      Alchemia
-                    </Button>
-                    <Button variant="contained" sx={subButtonStyle} onClick={(e) => handleButtonClick('/home/history', e)} onContextMenu={(e) => handleButtonContextMenu('/home/history', e)} onAuxClick={(e) => e.button === 1 && handleButtonClick('/home/history', e)}>
-                      Historia
                     </Button>
                     <Button variant="contained" sx={subButtonStyle} onClick={(e) => handleButtonClick('/home/npc', e)} onContextMenu={(e) => handleButtonContextMenu('/home/npc', e)} onAuxClick={(e) => e.button === 1 && handleButtonClick('/home/npc', e)}>
                       NPC
