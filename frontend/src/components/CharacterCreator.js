@@ -290,8 +290,10 @@ function CharacterCreator() {
     }
   };
 
+  const steps = ['Dane Podstawowe', 'Rasa', 'Klasa', 'Potwierdzenie'];
+
   const handleNext = () => {
-    if (activeStep < 2) setActiveStep(activeStep + 1);
+    if (activeStep < steps.length - 1) setActiveStep(activeStep + 1);
   };
 
   const handlePrev = () => {
@@ -377,7 +379,6 @@ function CharacterCreator() {
     return null;
   }
 
-  const steps = ['Dane Podstawowe', 'Rasa', 'Klasa', 'Potwierdzenie'];
 
   const genderButtonSx = (selected) => ({
     py: 2,

@@ -150,10 +150,11 @@ function Settings() {
       return;
     }
 
-    // POBIERZ AKTUALNY STATUS Z API zamiast polegać tylko na localStorage
+    // Aktualny status postaci bierzemy z API, nie z localStorage - gracz mógł
+    // go zmienić w innej karcie przeglądarki.
     const fetchCharacterStatus = async () => {
       try {
-        const response = await fetch(`${API_URL}/home/stats`, {
+        const response = await fetch(`${API_URL}/characters/${characterId}`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -162,7 +163,9 @@ function Settings() {
         });
 
         if (response.ok) {
-          const data = await response.json();
+          // Endpoint oddaje postać w kopercie { character: {...} } - właścicielowi
+          // pełny wiersz, obcym samą wizytówkę.
+          const data = (await response.json())?.character || {};
 
           // Utwórz kompletny obiekt postaci z aktualnych danych
           const charData = {
