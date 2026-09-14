@@ -1,0 +1,12 @@
+
+.env
+backend/.env
+backend/.installed
+uploads/
+.DS_Store
+*.log
+.idea/
+node_modules/
+
+# Build output frontendu
+frontend/dist/

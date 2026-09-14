@@ -1,0 +1,59 @@
+{
+  "name": "gaaran",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "proxy": "http://localhost:5000",
+  "scripts": {
+    "banner": "node scripts/make-banner.mjs",
+    "build": "rsbuild build",
+    "dev": "rsbuild dev --open",
+    "format": "prettier --write .",
+    "lint": "eslint .",
+    "preview": "rsbuild preview"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@fontsource/cinzel": "^5.2.8",
+    "@fontsource/cinzel-decorative": "^5.2.8",
+    "@fontsource/eb-garamond": "^5.2.7",
+    "@mui/icons-material": "^6.5.0",
+    "@mui/material": "^6.5.0",
+    "@tiptap/core": "^3.3.0",
+    "@tiptap/extension-color": "^3.3.0",
+    "@tiptap/extension-highlight": "^3.3.0",
+    "@tiptap/extension-image": "^3.3.0",
+    "@tiptap/extension-text-align": "^3.3.0",
+    "@tiptap/extension-text-style": "^3.3.0",
+    "@tiptap/extension-underline": "^3.3.0",
+    "@tiptap/react": "^3.3.0",
+    "@tiptap/starter-kit": "^3.3.0",
+    "axios": "^1.11.0",
+    "dompurify": "^3.4.11",
+    "jwt-decode": "^4.0.0",
+    "lodash": "^4.17.21",
+    "nostalgist": "^0.17.0",
+    "react": "^17.0.0 || ^18.0.0 || ^19.0.0",
+    "react-dom": "^17.0.0 || ^18.0.0 || ^19.0.0",
+    "react-hot-toast": "^2.6.0",
+    "react-quill": "^2.0.0",
+    "react-router-dom": "^7.8.2"
+  },
+  "devDependencies": {
+    "@eslint/compat": "^1.2.7",
+    "@eslint/js": "^9.21.0",
+    "@rsbuild/core": "^1.5.2",
+    "@rsbuild/plugin-react": "^1.4.0",
+    "eslint": "^9.34.0",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "globals": "^16.0.0",
+    "nodemon": "^3.1.10",
+    "prettier": "^3.6.2"
+  },
+  "peerDependencies": {
+    "react": "^17.0.0 || ^18.0.0 || ^19.0.0",
+    "react-dom": "^17.0.0 || ^18.0.0 || ^19.0.0"
+  }
+}
